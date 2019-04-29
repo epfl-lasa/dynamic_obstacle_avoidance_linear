@@ -18,8 +18,8 @@ import matplotlib._pylab_helpers
 from matplotlib import animation
 
 # 3D Animatcoion utils
-from mpl_toolkits.mplot3d import Axes3D
-import mpl_toolkits.mplot3d.art3d as art3d
+# from mpl_toolkits.mplot3d import Axes3D
+# import mpl_toolkits.mplot3d.art3d as art3d
 
 from dynamic_obstacle_avoidance.dynamical_system.dynamical_system_representation import *
 from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
@@ -138,97 +138,38 @@ class Animated():
         self.pause=False
 
         # Then setup FuncAnimation
-        print("done")
-        t = np.linspace(0,2*np.pi)
-        x = np.sin(t)
-        l, = self.ax.plot([0,2*np.pi],[-1,1])
+        self.tt = np.linspace(0,2*np.pi)
+        self.x = np.sin(self.tt)
+        # self.l, = self.ax.plot([0,2*np.pi],[-1,1])
 
-        animate = lambda i: 
+
+        # animate = lambda i: self.l.set_data(self.t[:i], self.x[:i])
         
-        self.ani = FuncAnimation(self.fig, animate, frames=len(t))
-        print('what file is it ', self.ani)
+        # self.ani = FuncAnimation(self.fig, animate, frames=len(self.t))
+        # self.ani = FuncAnimation(self.fig, self.f_animate, frames=len(self.t), repeat=False, init_func=self.setup_plot, blit=True, save_count=self.N_simuMax-2)
+
+        # self.setup_plot()
+        # self.ani = FuncAnimation(self.fig, self.update, interval=1, frames = self.N_simuMax-2, repeat=False, blit=True, save_count=self.N_simuMax-2)
         
-        # self.ani = FuncAnimation(self.fig, self.update, interval=1, frames = self.N_simuMax-2, repeat=False, init_func=self.setup_plot, blit=True, save_count=self.N_simuMax-2)
-        # print('what file is it 2 ', self.ani)
-
-    def f_animate(self, i, l):
-        l.set_data(t[:i], x[:i])
-
-        
-    def setup_plot(self):
-        # Draw obstacle
-        self.obs_polygon = []
-        
-        # Numerical hull of ellipsoid
-        for n in range(len(self.obs)):
-            self.obs[n].draw_ellipsoid(numPoints=50) # 50 points resolution
-
-        for n in range(len(self.obs)):
-            if self.dim==2:
-                emptyList = [[0,0] for i in range(50)]
-                self.obs_polygon.append( plt.Polygon(emptyList, animated=True,))
-                self.obs_polygon[n].set_color(np.array([176,124,124])/255)
-                self.obs_polygon[n].set_alpha(0.8)
-                patch_o = plt.gca().add_patch(self.obs_polygon[n])
-                self.patches.append(patch_o)
-
-                if self.obs[n].x_end > 0:
-                    cont, = plt.plot([],[],  'k--', animated=True)
-                else:
-                    cont, = plt.plot([self.obs[n].x_obs_sf[ii][0] for ii in range(len(self.obs[n].x_obs_sf))],
-                                     [self.obs[n].x_obs_sf[ii][1] for ii in range(len(self.obs[n].x_obs_sf))],
-                                     'k--', animated=True)
-                self.contour.append(cont)
-            else: # 3d
-                N_resol=50 # TODO  save as part of obstacle class internally from assigining....
-                self.obs_polygon.append(
-                    self.ax.plot_surface(
-                        np.reshape([obs[n].x_obs[i][0] for i in range(len(obs[n].x_obs))],
-                                   (N_resol,-1)),
-                        np.reshape([obs[n].x_obs[i][1] for i in range(len(obs[n].x_obs))],
-                                   (N_resol,-1)),
-                        np.reshape([obs[n].x_obs[i][2] for i in range(len(obs[n].x_obs))],
-                                   (N_resol, -1))  )  )
-
-            # Center of obstacle
-            center, = self.ax.plot([],[],'k.', animated=True)    
-            self.centers.append(center)
-            
-            # if hasattr(self.obs[n], 'center_dyn'):# automatic adaptation of center
-            cent_dyn, = self.ax.plot([],[], 'k+', animated=True, linewidth=18, markeredgewidth=4, markersize=13)
+            # self.n_loops = 10*self.N_simuMax-2
+        # else:
                 
-            self.cent_dyns.append(cent_dyn)
-                
+        # self.ani = FuncAnimation(self.fig, self.update, interval=1, frames=10*self.N_simuMax-2, repeat=False, init_func=self.setup_plot, blit=True, save_count=self.N_simuMax-2)
+        self.infitineLoop = True
+        self.print_count = False
         
-        for ii in range(self.N_points):
-            line, = plt.plot([], [], '--', lineWidth = 4, animated=True)
-            self.lines.append(line)
-            point, = plt.plot(self.x_pos[0,0,ii],self.x_pos[1,0,ii], '*k', markersize=10, animated=True)
-            if self.dim==3:
-                point, = plt.plot(self.x_pos[0,0,ii],self.x_pos[1,0,ii], self.x_pos[2,0,ii], '*k', markersize=10, animated=True)
-            self.startPoints.append(point)
-            point, = plt.plot([], [], 'bo', markersize=15, animated=True)
-            self.endPoints.append(point)
-
-        if self.dim==2:
-            plt.plot(self.attractorPos[0], self.attractorPos[1], 'k*', linewidth=7.0, markeredgewidth=4, markersize=13)
+        if self.infitineLoop:
+            self.ani = FuncAnimation(self.fig, self.update, interval=1, frames=None, repeat=False, init_func=self.setup_plot, blit=True, save_count=self.N_simuMax-2)
         else:
-            plt.plot([self.attractorPos[0]], [self.attractorPos[1]], [self.attractorPos[2]], 'k*', linewidth=7.0)
+            self.ani = FuncAnimation(self.fig, self.update, interval=1, frames=None, repeat=False, init_func=self.setup_plot, blit=True, save_count=self.N_simuMax-2)
 
-        if self.hide_ticks:
-            plt.tick_params(axis='both', which='major',bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
-
-        self.fig.canvas.mpl_connect('button_press_event', self.onClick)  # Button click enabled
-
-        return (self.lines + self.obs_polygon + self.contour + self.centers + self.cent_dyns + self.startPoints + self.endPoints)
-    
     
     def update(self, iSim):
         if self.pause:        # NO ANIMATION -- PAUSE
             self.old_time=time.time()
-            return (self.lines + self.obs_polygon + self.contour + self.centers + self.cent_dyns + self.startPoints + self.endPoints)
+            return (self.lines + self.obs_polygon + self.contour + self.centers + self.cent_dyns + self.startPoints + self.endPoints + self.attr_pos)
 
-        if not (iSim%10): # Display every tenth loop count
+        if not (iSim%10) and self.print_count: # Display every tenth loop count
             print('loop count={} - frame ={}-Simulation time ={}'.format(self.iSim, iSim, np.round(self.dt*self.iSim, 3) ))
 
         intersection_obs = obs_common_section(self.obs)
@@ -263,13 +204,14 @@ class Animated():
         # ========= Check collision ----------
         #collisions = obs_check_collision(self.x_pos[:,self.iSim+1,:], obs)
         #collPoints = np.array()
-
-
+        
         # if collPoints.shape[0] > 0:
         #     plot(collPoints[0,:], collPoints[1,:], 'rx')
         #     print('Collision detected!!!!')
         for o in range(len(self.obs)):# update obstacles if moving
-            self.obs[o].update_pos(self.t[self.iSim], self.dt) # Update obstacles
+            # print('limitis', len(self.ax.get_ylim()))
+            self.obs[o].update_pos(self.t[self.iSim], self.dt,
+                                   self.ax.get_xlim(), self.ax.get_ylim()) # Update obstacles
 
             self.centers[o].set_xdata(self.obs[o].x0[0])
             self.centers[o].set_ydata(self.obs[o].x0[1])
@@ -282,12 +224,12 @@ class Animated():
                 if self.dim==3:
                     self.cent_dyns[o].set_3d_properties(zs=self.obs[o].center_dyn[2])
 
-            if self.obs[o].x_end > self.t[self.iSim] or self.iSim<1: # First two rounds or moving
+            if self.obs[o].always_moving or self.obs[o].x_end > self.t[self.iSim] or self.iSim<1: # First two rounds or moving
                 if self.dim ==2: # only show safety-contour in 2d, otherwise not easily understandable
                     self.contour[o].set_xdata([self.obs[o].x_obs_sf[ii][0] for ii in range(len(self.obs[o].x_obs_sf))])
                     self.contour[o].set_ydata([self.obs[o].x_obs_sf[ii][1] for ii in range(len(self.obs[o].x_obs_sf))])
 
-            if self.obs[o].x_end > self.t[self.iSim] or self.iSim<2:
+            if self.obs[o].always_moving or self.obs[o].x_end > self.t[self.iSim] or self.iSim<2:
                 if self.dim==2:
                     self.obs_polygon[o].xy = self.obs[o].x_obs
                 else:
@@ -298,24 +240,130 @@ class Animated():
         # Pause for constant simulation speed
         self.old_time = self.sleep_const(self.old_time)
 
-        return (self.lines + self.obs_polygon + self.contour + self.centers + self.cent_dyns + self.startPoints + self.endPoints)
+        self.t[self.iSim+1] = (self.iSim+1)*self.dt
+
+
+
+        return (self.lines + self.obs_polygon + self.contour + self.centers + self.cent_dyns + self.startPoints + self.endPoints + self.attr_pos)
+
+    def setup_plot(self):
+        # Draw obstacle
+        self.obs_polygon = []
+        
+        # Numerical hull of ellipsoid
+        for n in range(len(self.obs)):
+            self.obs[n].draw_ellipsoid(numPoints=50) # 50 points resolution
+
+        for n in range(len(self.obs)):
+            if self.dim==2:
+                emptyList = [[0,0] for i in range(50)]
+                self.obs_polygon.append( plt.Polygon(emptyList, animated=True,))
+                self.obs_polygon[n].set_color(np.array([176,124,124])/255)
+                self.obs_polygon[n].set_alpha(0.8)
+                patch_o = plt.gca().add_patch(self.obs_polygon[n])
+                self.patches.append(patch_o)
+
+                if self.obs[n].x_end > 0:
+                    cont, = plt.plot([],[],  'k--', animated=True)
+                else:
+                    # cont, = plt.plot([self.obs[n].x_obs_sf[ii][0] for ii in range(len(self.obs[n].x_obs_sf))],
+                                     # [self.obs[n].x_obs_sf[ii][1] for ii in range(len(self.obs[n].x_obs_sf))],
+                                     # 'k--', animated=True)
+                    cont, = plt.plot([], [], 'k--', animated=True)
+                self.contour.append(cont)
+                
+            else: # 3d
+                N_resol=50 # TODO  save as part of obstacle class internally from assigining....
+                self.obs_polygon.append(
+                    self.ax.plot_surface(
+                        np.reshape([obs[n].x_obs[i][0] for i in range(len(obs[n].x_obs))],
+                                   (N_resol,-1)),
+                        np.reshape([obs[n].x_obs[i][1] for i in range(len(obs[n].x_obs))],
+                                   (N_resol,-1)),
+                        np.reshape([obs[n].x_obs[i][2] for i in range(len(obs[n].x_obs))],
+                                   (N_resol, -1))  )  )
+
+            # Center of obstacle
+            center, = self.ax.plot([],[],'k.', animated=True)    
+            self.centers.append(center)
+            
+            # if hasattr(self.obs[n], 'center_dyn'):# automatic adaptation of center
+            cent_dyn, = self.ax.plot([],[], 'k+', animated=True, linewidth=18, markeredgewidth=4, markersize=13)
+                
+            self.cent_dyns.append(cent_dyn)
+                
+        
+        for ii in range(self.N_points):
+            line, = plt.plot([], [], '--', lineWidth = 4, animated=True)
+            self.lines.append(line)
+            # point, = plt.plot(self.x_pos[0,0,ii],self.x_pos[1,0,ii], '*k', markersize=10, animated=True)
+            point, = plt.plot([], [], '*k', markersize=10, animated=True)
+            if self.dim==3:
+                point, = plt.plot(self.x_pos[0,0,ii],self.x_pos[1,0,ii], self.x_pos[2,0,ii], '*k', markersize=10)
+            self.startPoints.append(point)
+            
+            point, = plt.plot([], [], 'bo', markersize=15, animated=True)
+            self.endPoints.append(point)
+
+        if self.dim==2:
+            attr, = plt.plot(self.attractorPos[0], self.attractorPos[1], 'k*', linewidth=7.0, markeredgewidth=4, markersize=13)
+            self.attr_pos = [attr]
+        else:
+            self.attr_pos, = plt.plot([self.attractorPos[0]], [self.attractorPos[1]], [self.attractorPos[2]], 'k*', linewidth=7.0)
+            self.attr_pos = [attr]
+
+        if self.hide_ticks:
+            plt.tick_params(axis='both', which='major',bottom=False, top=False, left=False, right=False, labelbottom=False, labelleft=False)
+
+        self.fig.canvas.mpl_connect('button_press_event', self.onClick)  # Button click enabled
+
+        return (self.lines + self.obs_polygon + self.contour + self.centers + self.cent_dyns + self.startPoints + self.endPoints + self.attr_pos)
 
     
-    def check_convergence(self):
+    def check_convergence(self, infitineLoop=True):
         self.lastConvergences[0] = self.lastConvergences[1]
         self.lastConvergences[1] = self.lastConvergences[2]
 
         self.lastConvergences[2] =  np.sum(abs(self.x_pos[:,self.iSim,:] - np.tile(self.attractorPos, (self.N_points,1) ).T ))
 
-        if (sum(self.lastConvergences) < self.convergenceMargin) or (self.iSim+1>=self.N_simuMax):
-            self.ani.event_source.stop()
-            
-            if (self.iSim>=self.N_simuMax-1):
-                print('Maximum number of {} iterations reached without convergence.'.format(self.N_simuMax))
-                self.ani.event_source.stop()
+        if ((sum(self.lastConvergences) < self.convergenceMargin)
+            or (self.iSim+1>=self.N_simuMax)):
+
+            if infitineLoop:
+                self.iSim = 0
+                for ii in range(self.N_points):
+                    self.x_pos[0,0,ii] = self.attractorPos[0]
+                    self.x_pos[1,0,ii] = self.attractorPos[1]
+
+                    # self.startPoints[ii].set_data(self.x_pos[0,0,ii], self.x_pos[1,0,ii])
+                    self.startPoints[ii].set_xdata(self.x_pos[0,0,ii])
+                    self.startPoints[ii].set_ydata(self.x_pos[1,0,ii])
+
+                new_attractor_is_chosen = False
+                while(not new_attractor_is_chosen):
+                    self.attractorPos[0] = np.random.rand(1)[0]*(self.ax.get_xlim()[1]-self.ax.get_xlim()[0])+self.ax.get_xlim()[0]
+                    self.attractorPos[1] = np.random.rand(1)[0]*(self.ax.get_ylim()[1]-self.ax.get_ylim()[0])+self.ax.get_ylim()[0]
+
+                    no_collisions = obs_check_collision(np.tile(self.attractorPos, (1,1)).T, self.obs)
+                    new_attractor_is_chosen = no_collisions[0]
+
+                self.attr_pos[0].set_data(self.attractorPos[0], self.attractorPos[1])
+
             else:
-                print('Convergence with tolerance of {} reached after {} iterations.'.format(sum(self.lastConvergences), self.iSim+1) )
                 self.ani.event_source.stop()
+
+                if (self.iSim>=self.N_simuMax-1):
+                    print('Maximum number of {} iterations reached without convergence.'.format(self.N_simuMax))
+                    self.ani.event_source.stop()
+                else:
+                    print('Convergence with tolerance of {} reached after {} iterations.'.format(sum(self.lastConvergences), self.iSim+1) )
+                    self.ani.event_source.stop()
+
+    def set_velocity(self, obs_number=0, vel_x =0.0, vel_y=0.0, vel_rot=0):
+        self.obs[obs_number].xd = np.array([vel_x, vel_y])
+        self.obs[obs_number].w = vel_rot
+        
+        plt.show()
     
     def show(self):
         plt.show()

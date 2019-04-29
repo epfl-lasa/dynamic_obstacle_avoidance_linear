@@ -4,7 +4,7 @@ import warnings
 
 class Obstacle:
     """ Class of obstacles """
-    def __init__(self,  th_r=0, sf=1, xd=[0,0], sigma=1,  w=0, x_start=0, x_end=0, timeVariant=False, a=[1,1], p=[1,1], x0=[0,0],  tail_effect=True):
+    def __init__(self,  th_r=0, sf=1, xd=[0,0], sigma=1,  w=0, x_start=0, x_end=0, timeVariant=False, a=[1,1], p=[1,1], x0=[0,0],  tail_effect=True, always_moving=True):
         # This class defines obstacles to modulate the DS around it
         # At current stage the function focuses on Ellipsoids, but can be extended to more general obstacles
         
@@ -35,12 +35,17 @@ class Obstacle:
         if self.timeVariant:
             self.func_xd = 0
             self.func_w = 0
+            
+        else:
+            self.always_moving = always_moving
         
         if sum(np.abs(xd)) or w or self.timeVariant:
             # Dynamic simulation - assign varibales:
             self.x_start = x_start
             self.x_end = x_end
+            self.always_moving = False
         else:
+            self.x_start = 0
             self.x_end = 0
             
         self.w = w # Rotational velocity
@@ -53,12 +58,12 @@ class Obstacle:
     # def update_reference(self, new_ref):
         # TODo write function
     
-    def update_pos(self, t, dt):
+    def update_pos(self, t, dt, x_lim=[], y_lim=[]):
         # TODO - implement function dependend movement (yield), nonlinear integration
         # First order Euler integration
 
-        if self.x_end > t:
-            if self.x_start<t:
+        if self.always_moving or self.x_end > t :
+            if self.always_moving or self.x_start<t:
                 # Check if xd and w are functions
                 if self.timeVariant:
                     # TODO - implement RK4 for movement
@@ -67,6 +72,11 @@ class Obstacle:
                     self.w = self.func_w(t)
 
                 self.x0 = [self.x0[i] + dt*self.xd[i] for i in range(self.d)] # update position
+
+                if len(x_lim):
+                    self.x0[0] = np.min([np.max([self.x0[0], x_lim[0]]), x_lim[1]])
+                if len(y_lim):
+                    self.x0[1] = np.min([np.max([self.x0[1], y_lim[0]]), y_lim[1]])
 
                 if self.w: # if new rotation speed
 

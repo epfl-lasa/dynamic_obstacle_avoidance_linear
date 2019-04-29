@@ -1,3 +1,6 @@
+LICENSE
+MANIFEST.in
+README.md
 setup.py
 scripts/examples_animation.py
 scripts/examples_vector_field.py
@@ -17,3 +20,4 @@ src/dynamic_obstacle_avoidance/obstacle_avoidance/obstacle.py
 src/dynamic_obstacle_avoidance/visualization/__init__.py
 src/dynamic_obstacle_avoidance/visualization/animated_simulation.py
 src/dynamic_obstacle_avoidance/visualization/vector_field_visualization.py
+src/dynamic_obstacle_avoidance/visualization/widget_function_vectorfield.py
