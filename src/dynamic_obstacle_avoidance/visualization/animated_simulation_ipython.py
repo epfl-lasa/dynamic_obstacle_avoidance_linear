@@ -61,7 +61,7 @@ def samplePointsAtBorder_ipython(number_of_points, x_range, y_range, obs=[]):
 ##### Anmation Function #####
 class Animated_ipython():
     """An animated scatter plot using matplotlib.animations.FuncAnimation."""
-    def __init__(self, x0, obs=[], N_simuMax = 600, dt=0.01, attractorPos='default', convergenceMargin=0.01, x_range=[-10,10], y_range=[-10,10], zRange=[-10,10], sleepPeriod=0.03, RK4_int = False, dynamicalSystem=linearAttractor, hide_ticks=True, figSize=(8,5)):
+    def __init__(self, x0, obs=[], N_simuMax = 600, dt=0.01, attractorPos='default', convergenceMargin=0.01, x_range=[-10,10], y_range=[-10,10], zRange=[-10,10], sleepPeriod=0.001, RK4_int = False, dynamicalSystem=linearAttractor, hide_ticks=True, figSize=(8,5)):
 
         print("this is ipython")
         self.dim = x0.shape[0]
@@ -246,17 +246,17 @@ class Animated_ipython():
         # self.l.set_data(self.tt[:iSim], self.x[:iSim]*100)
         # self.l.set_data(self.x_pos[0,:self.iSim,0], self.x_pos[1,:self.iSim,0])
 
-        self.ls[0].set_data(self.x_pos[0,:self.iSim,0], self.x_pos[1,:self.iSim,0])
-        print('tt val', self.tt[:iSim])
-        print('xx val,' )
+        # self.ls[0].set_data(self.x_pos[0,:self.iSim,0], self.x_pos[1,:self.iSim,0])
+        # print('tt val', self.tt[:iSim])
+        # print('xx val,' )
                         
         
         # return (self.lines + self.obs_polygon + self.contour + self.centers + self.cent_dyns + self.startPoints + self.endPoints + self.attr_pos)
     
 
     def setup_plot(self):
-        l, = self.ax.plot([0,2*np.pi],[-1,1])
-        self.ls = [l]
+        # l, = self.ax.plot([0,2*np.pi],[-1,1])
+        # self.ls = [l]
         
         # Draw obstacle
         self.obs_polygon = []
@@ -342,6 +342,7 @@ class Animated_ipython():
 
             if infitineLoop:
                 self.iSim = 0
+                
                 for ii in range(self.N_points):
                     self.x_pos[0,0,ii] = self.attractorPos[0]
                     self.x_pos[1,0,ii] = self.attractorPos[1]

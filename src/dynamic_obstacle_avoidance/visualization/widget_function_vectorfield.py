@@ -1,6 +1,10 @@
 from dynamic_obstacle_avoidance.dynamical_system.dynamical_system_representation import *
 from dynamic_obstacle_avoidance.visualization.vector_field_visualization import *  #
 
+from ipywidgets import interact, interactive, fixed, interact_manual
+from ipywidgets import FloatSlider, IntSlider
+import ipywidgets as widgets
+
 saveFigures=False
 
 def widget_ellipses_vectorfield(x1=2, x2=2, a1=1, a2=1, p1=1, p2=1, th_r=0, sf=1,
@@ -92,3 +96,35 @@ def widgetFunction_intersection(center1_1=2, center2_1=2, orientation_1=0,
 
 
 
+def run_obstacle_description():
+    #%matplotlib gtk
+    x_lim = [-16, 16]
+    y_lim = [-2, 18]
+
+    x1_widget = FloatSlider(description='Position \( x_1\)', min=x_lim[0], max=x_lim[1], step=0.1, value=6)
+    x2_widget = FloatSlider(description='Position \( x_2\)', min=y_lim[0], max=y_lim[1], step=0.1, value=8)
+
+    axis_widget1 = FloatSlider(description='Axis length 1', min=0.1, max=8, step=0.1, value=5)
+    axis_widget2 = FloatSlider(description='Axis length 2', min=0.1, max=8, step=0.1, value=3)
+
+    curvature_widget1 = IntSlider(description='Curvature 1', min=1, max=5, value=3)
+    curvature_widget2 = IntSlider(description='Curvature 2', min=1, max=5, value=1)
+
+    margin_widget = FloatSlider(description='Safety Margin', min=1, max=3, step=0.1, value=1.2)
+
+    angle_widget = FloatSlider(description='Orientation', min=-180, max=180, step=1, value=30)
+
+    pointX_widget = FloatSlider(description='Point position x', min=x_lim[0], max=x_lim[1], step=0.1, value=-3)
+    pointY_widget = FloatSlider(description='Point position y', min=y_lim[0], max=y_lim[1], step=0.1, value=15)
+
+    print("Change parameters and press <<Run Interact>> to apply.")
+
+    interact_manual(widget_ellipses_vectorfield, x1=x1_widget, x2=x2_widget,
+                    th_r=angle_widget,
+                    a1=axis_widget1, a2=axis_widget2,
+                    p1=curvature_widget1, p2=curvature_widget2,
+                    sf=margin_widget,
+                    draw_vectorField=True,
+                    point_posX=pointX_widget, point_posY=pointY_widget,
+                    x_low=fixed(x_lim[0]), x_high=fixed(x_lim[1]), 
+                    y_low=fixed(y_lim[0]), y_high=fixed(y_lim[1]));
