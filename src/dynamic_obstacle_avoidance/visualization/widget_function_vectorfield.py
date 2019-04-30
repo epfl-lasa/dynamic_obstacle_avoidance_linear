@@ -4,6 +4,7 @@ from dynamic_obstacle_avoidance.visualization.vector_field_visualization import 
 saveFigures=False
 
 def widget_ellipses_vectorfield(x1=2, x2=2, a1=1, a2=1, p1=1, p2=1, th_r=0, sf=1,
+                                point_posX=4, point_posY=4,
                                 x_low=0.8, x_high=4.2, y_low=-2, y_high=2, draw_vectorField=True):
 
     xlim=[x_low, x_high]
@@ -16,10 +17,20 @@ def widget_ellipses_vectorfield(x1=2, x2=2, a1=1, a2=1, p1=1, p2=1, th_r=0, sf=1
     p=[p1,p2]
     th_r=th_r/180*pi
     vel = [0, 0]
-    
     obs.append(Obstacle(a=a, p=p, x0=x0, th_r=th_r, sf=sf, xd=vel))
 
-    Simulation_vectorFields(xlim, ylim, point_grid=70, obs=obs, xAttractor=xAttractor, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(13.,10), draw_vectorField=draw_vectorField)
+    point_pos = np.array([point_posX, point_posY])
+    ds_init = point_pos - xAttractor
+
+    ds_mod = obs_avoidance_interpolation_moving(point_pos, ds_init, obs)
+
+    fig, ax = Simulation_vectorFields(xlim, ylim, point_grid=10, obs=obs, xAttractor=xAttractor, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(13.,10), draw_vectorField=draw_vectorField)
+
+    fig,ax  = plt.subplots() 
+    # ax.quiver([point_pos[0]], [point_pos[1]], [ds_init[0]], [ds_init[1]], color='g', scale=5, zorder=10000)
+    # ax.quiver([point_pos[0]], [point_pos[1]], [ds_mod[0]], [ds_mod[1]], color='r', scale=5, zorder=10)
+    plt.show()
+    # ax_init.quiver(point_pos[0], point_pos[1], ds_init[0], ds_init[1], c='b')
 
 def widgetFunction_referencePoint(x1=2, x2=2, th_r=0,
                                 refPoint_dir=0, refPoint_rat=0,

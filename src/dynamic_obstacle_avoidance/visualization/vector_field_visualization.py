@@ -49,20 +49,28 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
 
     if plotObstacle:
         obs_polygon = []
+        obs_polygon_sf = []
 
         for n in range(len(obs)):
             x_obs_sf = obs[n].x_obs_sf # todo include in obs_draw_ellipsoid
-            obs_polygon.append( plt.Polygon(obs[n].x_obs))
-            if len(obstacleColor)==len(obs):
-                obs_polygon[n].set_color(obstacleColor[n])
-            else:
-                obs_polygon[n].set_color(np.array([176,124,124])/255)
-            plt.gca().add_patch(obs_polygon[n])
             
             plt.plot([x_obs_sf[i][0] for i in range(len(x_obs_sf))],
                 [x_obs_sf[i][1] for i in range(len(x_obs_sf))], 'k--')
-
+            
+            obs_polygon_sf.append( plt.Polygon(obs[n].x_obs_sf))            
+            obs_polygon.append( plt.Polygon(obs[n].x_obs))
+            if len(obstacleColor)==len(obs):
+                obs_polygon_sf[n].set_color([1,1,1])
+                obs_polygon[n].set_color(obstacleColor[n])
+            else:
+                obs_polygon_sf[n].set_color([1,1,1])
+                obs_polygon[n].set_color(np.array([176,124,124])/255)
+            
+            plt.gca().add_patch(obs_polygon_sf[n])
+            plt.gca().add_patch(obs_polygon[n])
+            
             ax_ifd.plot(obs[n].x0[0],obs[n].x0[1],'k.')
+            
             if hasattr(obs[n], 'center_dyn'):# automatic adaptation of center 
                 ax_ifd.plot(obs[n].center_dyn[0],obs[n].center_dyn[1], 'k+', linewidth=18, markeredgewidth=4, markersize=13)
 
@@ -153,12 +161,16 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
             dx1_noColl[ind_nonZero] = dx1_noColl[ind_nonZero]/normVel[ind_nonZero]
             dx2_noColl[ind_nonZero] = dx2_noColl[ind_nonZero]/normVel[ind_nonZero]
 
-            res_ifd = ax_ifd.streamplot(XX, YY,dx1_noColl, dx2_noColl, color=streamColor)
+            res_ifd = ax_ifd.streamplot(XX, YY,dx1_noColl, dx2_noColl, color=streamColor, zorder=0)
 
         ax_ifd.plot(xAttractor[0],xAttractor[1], 'k*',linewidth=18.0, markersize=18)
 
     plt.ion()
     plt.show()
+
+    returnFigure=True
+    if returnFigure:
+        return fig_ifd, ax_ifd
     
     if saveFigure:
         plt.savefig('fig/' + figName + '.eps', bbox_inches='tight')

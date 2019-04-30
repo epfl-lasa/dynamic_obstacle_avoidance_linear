@@ -31,6 +31,10 @@ def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPo
     # xd [dim]: modulated dynamical system at position x
     #
 
+    # print('x', x)
+    # print('xd', xd)
+    # print('obs', obs)
+    
     # Initialize Variables
     N_obs = len(obs) #number of obstacles
     if N_obs ==0:
