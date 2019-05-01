@@ -61,7 +61,7 @@ def samplePointsAtBorder_ipython(number_of_points, x_range, y_range, obs=[]):
 ##### Anmation Function #####
 class Animated_ipython():
     """An animated scatter plot using matplotlib.animations.FuncAnimation."""
-    def __init__(self, x0, obs=[], N_simuMax = 600, dt=0.01, attractorPos='default', convergenceMargin=0.01, x_range=[-10,10], y_range=[-10,10], zRange=[-10,10], sleepPeriod=0.001, RK4_int = False, dynamicalSystem=linearAttractor, hide_ticks=True, figSize=(8,5)):
+    def __init__(self, x0, obs=[], N_simuMax = 600, dt=0.01, attractorPos='default', convergenceMargin=0.01, x_range=[-10,10], y_range=[-10,10], zRange=[-10,10], sleepPeriod=0.03, RK4_int = False, dynamicalSystem=linearAttractor, hide_ticks=True, figSize=(8,5)):
 
         print("this is ipython")
         self.dim = x0.shape[0]
@@ -130,33 +130,18 @@ class Animated_ipython():
 
         # Set axis etc.
         plt.gca().set_aspect('equal', adjustable='box')
-
-        # Adjust dynamic center intersection_obs = obs_common_section(self.obs)
-        # dynamic_center_3d(self.obs, intersection_obs)
+        plt.tight_layout()
 
         # Button click variables
         self.pause_start = 0
         self.pause=False
 
-        # Then setup FuncAnimation
-        self.tt = np.linspace(0,2*np.pi)
-        self.x = np.sin(self.tt)
-        # self.l, = self.ax.plot([0,2*np.pi],[-1,1])
-        
-        # animate = lambda i: self.l.set_data(self.tt[:i], self.x[:i]*100)
-        
-        # self.ani = FuncAnimation(self.fig, animate, frames=len(self.t))
-        
         self.setup_plot()
         self.infitineLoop = True
         self.print_count = False
-
         
         if self.infitineLoop:
-            # self.ani = FuncAnimation(self.fig, self.update, interval=1, frames=None, repeat=False, init_func=self.setup_plot, blit=True, save_count=self.N_simuMax-2)
-            # self.ani = FuncAnimation(self.fig, self.update_new, interval=1, frames=None, repeat=False, blit=True, save_count=self.N_simuMax-2)
-            print('done this')
-            self.ani = FuncAnimation(self.fig, self.update, frames=len(self.tt))
+            self.ani = FuncAnimation(self.fig, self.update, frames=None)
         else:
             self.ani = FuncAnimation(self.fig, self.update, interval=1, frames=None, repeat=False, init_func=self.setup_plot, blit=True, save_count=self.N_simuMax-2)
 
@@ -167,48 +152,14 @@ class Animated_ipython():
         if self.pause:        # NO ANIMATION -- PAUSE
             self.old_time=time.time()
             return (self.lines + self.obs_polygon + self.contour + self.centers + self.cent_dyns + self.startPoints + self.endPoints + self.attr_pos)
+        
+        self.check_convergence() # Check convergence 
 
         if not (iSim%10) and self.print_count: # Display every tenth loop count
             print('loop count={} - frame ={}-Simulation time ={}'.format(self.iSim, iSim, np.round(self.dt*self.iSim, 3) ))
 
-        intersection_obs = obs_common_section(self.obs)
-        dynamic_center_3d(self.obs, intersection_obs)
         
-        if self.RK4_int: # Runge kutta integration
-            for j in range(self.N_points):
-                self.x_pos[:, self.iSim+1,j] = obs_avoidance_rk4(self.dt, self.x_pos[:,self.iSim,j], self.obs, x0=self.attractorPos, obs_avoidance = obs_avoidance_interpolation_moving)
-
-        else: # Simple euler integration
-            # Calculate DS
-            for j in range(self.N_points):
-                xd_temp = linearAttractor(self.x_pos[:,self.iSim, j], self.attractorPos)
-                
-                self.xd_ds[:,self.iSim,j] = obs_avoidance_interpolation_moving(self.x_pos[:,self.iSim, j], xd_temp, self.obs)
-                self.x_pos[:,self.iSim+1,:] = self.x_pos[:,self.iSim, :] + self.xd_ds[:,self.iSim, :]*self.dt
-        
-        self.t[self.iSim+1] = (self.iSim+1)*self.dt
-        
-        # Update plots
-        for j in range(self.N_points):
-            self.lines[j].set_xdata(self.x_pos[0,:self.iSim+1,j])
-            self.lines[j].set_ydata(self.x_pos[1,:self.iSim+1,j])
-            if self.dim==3:
-                self.lines[j].set_3d_properties(zs=self.x_pos[2,:self.iSim+1,j])
-
-            self.endPoints[j].set_xdata(self.x_pos[0,self.iSim+1,j])
-            self.endPoints[j].set_ydata(self.x_pos[1,self.iSim+1,j])
-            if self.dim==3:
-                self.endPoints[j].set_3d_properties(zs=self.x_pos[2,self.biSim+1,j])
-        
-        # ========= Check collision ----------
-        #collisions = obs_check_collision(self.x_pos[:,self.iSim+1,:], obs)
-        #collPoints = np.array()
-        
-        # if collPoints.shape[0] > 0:
-        #     plot(collPoints[0,:], collPoints[1,:], 'rx')
-        #     print('Collision detected!!!!')
         for o in range(len(self.obs)):# update obstacles if moving
-            # print('limitis', len(self.ax.get_ylim()))
             self.obs[o].update_pos(self.t[self.iSim], self.dt,
                                    self.ax.get_xlim(), self.ax.get_ylim()) # Update obstacles
 
@@ -233,31 +184,48 @@ class Animated_ipython():
                     self.obs_polygon[o].xy = self.obs[o].x_obs
                 else:
                     self.obs_polygon[o].xyz = self.obs[o].x_obs
+
+        intersection_obs = obs_common_section(self.obs)
+        dynamic_center_3d(self.obs, intersection_obs)
+        
+        if self.RK4_int: # Runge kutta integration
+            for j in range(self.N_points):
+                self.x_pos[:, self.iSim+1,j] = obs_avoidance_rk4(self.dt, self.x_pos[:,self.iSim,j], self.obs, x0=self.attractorPos, obs_avoidance = obs_avoidance_interpolation_moving)
+
+        else: # Simple euler integration
+            # Calculate DS
+            for j in range(self.N_points):
+                xd_temp = linearAttractor(self.x_pos[:,self.iSim, j], self.attractorPos)
+                
+                self.xd_ds[:,self.iSim,j] = obs_avoidance_interpolation_moving(self.x_pos[:,self.iSim, j], xd_temp, self.obs)
+                self.x_pos[:,self.iSim+1,:] = self.x_pos[:,self.iSim, :] + self.xd_ds[:,self.iSim, :]*self.dt
+
+        # Update plots
+        for j in range(self.N_points):
+            self.lines[j].set_xdata(self.x_pos[0,:self.iSim+1,j])
+            self.lines[j].set_ydata(self.x_pos[1,:self.iSim+1,j])
+            if self.dim==3:
+                self.lines[j].set_3d_properties(zs=self.x_pos[2,:self.iSim+1,j])
+
+            self.endPoints[j].set_xdata(self.x_pos[0,self.iSim+1,j])
+            self.endPoints[j].set_ydata(self.x_pos[1,self.iSim+1,j])
+            if self.dim==3:
+                self.endPoints[j].set_3d_properties(zs=self.x_pos[2,self.biSim+1,j])
+                
+
+        
+        self.t[self.iSim+1] = (self.iSim+1)*self.dt
+
         self.iSim += 1 # update simulation counter
-        self.check_convergence() # Check convergence 
+        
         
         # Pause for constant simulation speed
         self.old_time = self.sleep_const(self.old_time)
 
         self.t[self.iSim+1] = (self.iSim+1)*self.dt
-        
-    # def update_new(self, iSim):
-        
-        # self.l.set_data(self.tt[:iSim], self.x[:iSim]*100)
-        # self.l.set_data(self.x_pos[0,:self.iSim,0], self.x_pos[1,:self.iSim,0])
 
-        # self.ls[0].set_data(self.x_pos[0,:self.iSim,0], self.x_pos[1,:self.iSim,0])
-        # print('tt val', self.tt[:iSim])
-        # print('xx val,' )
-                        
         
-        # return (self.lines + self.obs_polygon + self.contour + self.centers + self.cent_dyns + self.startPoints + self.endPoints + self.attr_pos)
-    
-
     def setup_plot(self):
-        # l, = self.ax.plot([0,2*np.pi],[-1,1])
-        # self.ls = [l]
-        
         # Draw obstacle
         self.obs_polygon = []
         
@@ -274,13 +242,7 @@ class Animated_ipython():
                 patch_o = plt.gca().add_patch(self.obs_polygon[n])
                 self.patches.append(patch_o)
 
-                if self.obs[n].x_end > 0:
-                    cont, = plt.plot([],[],  'k--')
-                else:
-                    # cont, = plt.plot([self.obs[n].x_obs_sf[ii][0] for ii in range(len(self.obs[n].x_obs_sf))],
-                                     # [self.obs[n].x_obs_sf[ii][1] for ii in range(len(self.obs[n].x_obs_sf))],
-                                     # 'k--', animated=True)
-                    cont, = plt.plot([], [], 'k--')
+                cont, = plt.plot([],[],  'k', linewidth=2)
                 self.contour.append(cont)
                 
             else: # 3d
@@ -342,7 +304,6 @@ class Animated_ipython():
 
             if infitineLoop:
                 self.iSim = 0
-                
                 for ii in range(self.N_points):
                     self.x_pos[0,0,ii] = self.attractorPos[0]
                     self.x_pos[1,0,ii] = self.attractorPos[1]

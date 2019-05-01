@@ -32,7 +32,35 @@ def pltLines(pos0, pos1, xlim=[-100,100], ylim=[-100,100]):
     plt.plot(xlim, ylim, '--', color=[0.3,0.3,0.3], linewidth=2)
 
 
-def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[], sysDyn_init=False, xAttractor = np.array(([0,0])), saveFigure = False, figName='default', noTicks=True, showLabel=True, figureSize=(16.,13), obs_avoidance_func=obs_avoidance_interpolation_moving, attractingRegion=False, drawVelArrow=False, colorCode=False, streamColor=[0.05,0.05,0.7], obstacleColor=[], plotObstacle=True, plotStream=True, figHandle=[], alphaVal=1, dynamicalSystem=linearAttractor, draw_vectorField=True):
+def plot_streamlines(points_init, ax, obs=[], attractorPos=[0,0],
+                     dim=2, dt=0.05, max_simu_step=1000, convergence_margin=0.03):
+    n_points = np.array(points_init).shape[1]
+
+    x_pos = np.zeros((dim, max_simu_step+1, n_points))
+    x_pos[:,0,:] = points_init
+
+    for iSim in range(max_simu_step):
+        for j in range(n_points):
+            x_pos[:, iSim+1,j] = obs_avoidance_rk4(
+                dt, x_pos[:,iSim, j], obs, x0=attractorPos,
+                obs_avoidance=obs_avoidance_interpolation_moving)
+
+         # Check convergence
+        if (np.sum((x_pos[:, iSim+1, :]-np.tile(attractorPos, (n_points,1)).T)**2)
+            < convergence_margin):
+            x_pos = x_pos[:, :iSim+2, :]
+            break
+
+    for j in range(n_points):
+        ax.plot(x_pos[0, :, j], x_pos[1, :, j], '--', lineWidth=4)
+        ax.plot(x_pos[0, 0, j], x_pos[1, 0, j], 'k*', markeredgewidth=4, markersize=13)
+        
+
+    # return x_pos
+
+def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[], sysDyn_init=False, xAttractor = np.array(([0,0])), saveFigure = False, figName='default', noTicks=True, showLabel=True, figureSize=(16.,13), obs_avoidance_func=obs_avoidance_interpolation_moving, attractingRegion=False, drawVelArrow=False, colorCode=False, streamColor=[0.05,0.05,0.7], obstacleColor=[], plotObstacle=True, plotStream=True, figHandle=[], alphaVal=1, dynamicalSystem=linearAttractor, draw_vectorField=True, points_init=[]):
+
+    dim = 2
 
     # Numerical hull of ellipsoid 
     for n in range(len(obs)): 
@@ -40,6 +68,7 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
 
     # Adjust dynamic center
     intersection_obs = obs_common_section(obs)
+    dynamic_center_3d(obs, intersection_obs)
 
     if len(figHandle): 
         fig_ifd, ax_ifd = figHandle[0], figHandle[1] 
@@ -57,8 +86,8 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
             plt.plot([x_obs_sf[i][0] for i in range(len(x_obs_sf))],
                 [x_obs_sf[i][1] for i in range(len(x_obs_sf))], 'k--')
             
-            obs_polygon_sf.append( plt.Polygon(obs[n].x_obs_sf))            
-            obs_polygon.append( plt.Polygon(obs[n].x_obs))
+            obs_polygon_sf.append( plt.Polygon(obs[n].x_obs_sf, zorder=1))
+            obs_polygon.append( plt.Polygon(obs[n].x_obs, zorder=2))
             if len(obstacleColor)==len(obs):
                 obs_polygon_sf[n].set_color([1,1,1])
                 obs_polygon[n].set_color(obstacleColor[n])
@@ -93,6 +122,12 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
 
     plt.tick_params(axis='both', which='major', labelsize=14)
     plt.tick_params(axis='both', which='minor', labelsize=12)
+
+    ax_ifd.plot(xAttractor[0],xAttractor[1], 'k*',linewidth=18.0, markersize=18)
+
+    # Show certain streamlines
+    if np.array(points_init).shape[0]:
+        plot_streamlines(points_init, ax_ifd, obs, xAttractor)
 
     if not draw_vectorField:
         plt.ion()
@@ -163,8 +198,7 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
 
             res_ifd = ax_ifd.streamplot(XX, YY,dx1_noColl, dx2_noColl, color=streamColor, zorder=0)
 
-        ax_ifd.plot(xAttractor[0],xAttractor[1], 'k*',linewidth=18.0, markersize=18)
-
+        
     plt.ion()
     plt.show()
 

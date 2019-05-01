@@ -38,7 +38,7 @@ def widget_ellipses_vectorfield(x1=2, x2=2, a1=1, a2=1, p1=1, p2=1, th_r=0, sf=1
 
 def widgetFunction_referencePoint(x1=2, x2=2, th_r=0,
                                 refPoint_dir=0, refPoint_rat=0,
-                                x_low=0.8, x_high=4.2, y_low=-2, y_high=2, draw_vectorField=True):
+                                x_low=0.8, x_high=4.2, y_low=-2, y_high=2, draw_style="None"):
     
     x_lim=[x_low, x_high]
     y_lim=[y_low, y_high]
@@ -65,35 +65,49 @@ def widgetFunction_referencePoint(x1=2, x2=2, th_r=0,
                                [-np.sin(th_r), np.cos(th_r)]])
     obs[0].center_dyn = rotationMatrix.T @ obs[0].center_dyn*obs[0].sf + obs[0].x0
 
-    Simulation_vectorFields(x_lim, y_lim, point_grid=70, obs=obs, xAttractor=xAttractor, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(13.,10), draw_vectorField=draw_vectorField )
+    if draw_style=="Simulated streamline":
+        n_points = 6
+        points_init = np.vstack((np.ones(n_points)*x_lim[1],
+                                 np.linspace(y_lim[0], y_lim[1], n_points)))
+        points_init = points_init[:, 1:-1]
+        Simulation_vectorFields(x_lim, y_lim, point_grid=70, obs=obs, xAttractor=xAttractor, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(13.,10), draw_vectorField=False, points_init=points_init)
+        
+    elif draw_style=="Vectorfield":
+        Simulation_vectorFields(x_lim, y_lim, point_grid=70, obs=obs, xAttractor=xAttractor, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(13.,10), draw_vectorField=True )
+    else:
+        Simulation_vectorFields(x_lim, y_lim, point_grid=70, obs=obs, xAttractor=xAttractor, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(13.,10), draw_vectorField=False)
 
 
-def widgetFunction_intersection(center1_1=2, center2_1=2, orientation_1=0,
-                                   center1_2=2, center2_2=2, orientation_2=0,
-                                   center1_3=2, center2_3=2, orientation_3=0,
-                                   center1_4=2, center2_4=2, orientation_4=0,
-                                   # x1_1=2, x2_1=2, th_2=0,
-                                   # x1=2, x2=2, th_r=0,
-                                   # x1=2, x2=2, th_r=0,
-                                   n_obstacles=2,
-                                   x_low=0.8, x_high=4.2, y_low=-2, y_high=2, draw_vectorField=False):
-    
-    x_lim=[x_low, x_high]
-    y_lim=[y_low, y_high]
-    
-    xAttractor = [12, 1]
-    obs = []
-    
-    obs.append(Obstacle(a=[3,1], p=[1,1], x0=[center1_1,center2_1], th_r=orientation_1, sf=2.0))
-    obs.append(Obstacle(a=[2,2], p=[1,1], x0=[center1_2,center2_2], th_r=orientation_2, sf=1.5))
-    
-    if n_obstacles>=3:
-        obs.append(Obstacle(a=[1.0, 2.5], p=[3,3], x0=[center1_3,center2_3], th_r=orientation_3, sf=1.8))
-    if n_obstacles>=4:
-        obs.append(Obstacle(a=[0.8,1], p=[2,2], x0=[center1_4,center2_4], th_r=orientation_4, sf=3))
 
-    Simulation_vectorFields(x_lim, y_lim, point_grid=70, obs=obs, xAttractor=xAttractor, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(13.,10), draw_vectorField=draw_vectorField )
+class WidgetClass_intersection():
+    def __init__(self,  x_lim, y_lim, xAttractor=[12,0]):
+        self.obs = []
+        self.obs.append(Obstacle(a=[3,1], p=[1,1],
+                                 x0=[-14,4], th_r=45/180*pi, sf=2.0))
+        self.obs.append(Obstacle(a=[3,1], p=[1,1],
+                                 x0=[-3, 10], th_r=0/180*pi, sf=1.3))
+        self.obs.append(Obstacle(a=[2.4, 2.4], p=[4,4],
+                                 x0=[-6, 4], th_r=-80/180*pi, sf=1.1))
+        self.obs.append(Obstacle(a=[3,2], p=[1,2],
+                                 x0=[10, 14], th_r=-110/180*pi, sf=1.5))
 
+        self.x_lim = x_lim
+        self.y_lim = y_lim
+        self.xAttractor = xAttractor
+        
+    def set_obstacle_number(self, n_obstacles=2):
+        self.n_obstacles = n_obstacles
+
+    def set_obstacle_values(self, it_obs, x0_1, x0_2, th_r):
+        it_obs -= 1
+        self.obs[it_obs].x0 = [x0_1, x0_2]
+        self.obs[it_obs].th_r = th_r
+        self.obs[it_obs]  = Obstacle(x0=[x0_1, x0_2], th_r=th_r,
+                                     a=self.obs[it_obs].a, p=self.obs[it_obs].p, sf=self.obs[it_obs].sf)
+        
+    def update(self, check_vectorfield=True):
+        obs_cp = self.obs[:self.n_obstacles]
+        Simulation_vectorFields(self.x_lim, self.y_lim, point_grid=70, obs=obs_cp, xAttractor=self.xAttractor, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(13.,10), draw_vectorField=check_vectorfield)
 
 
 def run_obstacle_description():
