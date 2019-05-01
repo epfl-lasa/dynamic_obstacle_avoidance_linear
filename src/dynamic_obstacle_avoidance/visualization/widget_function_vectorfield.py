@@ -1,11 +1,34 @@
 from dynamic_obstacle_avoidance.dynamical_system.dynamical_system_representation import *
-from dynamic_obstacle_avoidance.visualization.vector_field_visualization import *  #
+from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
+from dynamic_obstacle_avoidance.obstacle_avoidance.modulation import *
+from dynamic_obstacle_avoidance.obstacle_avoidance.obs_common_section import *
+from dynamic_obstacle_avoidance.obstacle_avoidance.obs_dynamic_center_3d import *
+from dynamic_obstacle_avoidance.obstacle_avoidance.linear_modulations import *
+
+# from dynamic_obstacle_avoidance.visualization.animated_simulation import *
+from dynamic_obstacle_avoidance.visualization.animated_simulation_ipython import *
+from dynamic_obstacle_avoidance.visualization.vector_field_visualization import *
+
+
+from dynamic_obstacle_avoidance.dynamical_system.dynamical_system_representation import *
 
 from ipywidgets import interact, interactive, fixed, interact_manual
 from ipywidgets import FloatSlider, IntSlider
 import ipywidgets as widgets
 
+
+# Command to automatically reload libraries -- in ipython before exectureion
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+
+import time
+
+
+
+
 saveFigures=False
+
 
 def widget_ellipses_vectorfield(x1=2, x2=2, a1=1, a2=1, p1=1, p2=1, th_r=0, sf=1,
                                 point_posX=4, point_posY=4,
@@ -88,7 +111,7 @@ class WidgetClass_intersection():
                                  x0=[-3, 10], th_r=0/180*pi, sf=1.3))
         self.obs.append(Obstacle(a=[2.4, 2.4], p=[4,4],
                                  x0=[-6, 4], th_r=-80/180*pi, sf=1.1))
-        self.obs.append(Obstacle(a=[3,2], p=[1,2],
+        self.obs.append(Obstacle(a=[3, 2], p=[1,2],
                                  x0=[10, 14], th_r=-110/180*pi, sf=1.5))
 
         self.x_lim = x_lim
@@ -100,11 +123,16 @@ class WidgetClass_intersection():
 
     def set_obstacle_values(self, it_obs, x0_1, x0_2, th_r):
         it_obs -= 1
-        self.obs[it_obs].x0 = [x0_1, x0_2]
-        self.obs[it_obs].th_r = th_r
+        # print('it obs', it_obs)
+        x0 = np.copy([x0_1, x0_2])*1
+        th_r = np.copy(th_r)
         self.obs[it_obs]  = Obstacle(x0=[x0_1, x0_2], th_r=th_r,
                                      a=self.obs[it_obs].a, p=self.obs[it_obs].p, sf=self.obs[it_obs].sf)
-        
+        # for ii in range(len(self.obs)):
+            # print('obs ', ii)
+            # print('obs x0 ', self.obs[ii].x0)
+            # print('obs thr ', self.obs[ii].th_r)
+            
     def update(self, check_vectorfield=True):
         obs_cp = self.obs[:self.n_obstacles]
         Simulation_vectorFields(self.x_lim, self.y_lim, point_grid=70, obs=obs_cp, xAttractor=self.xAttractor, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(13.,10), draw_vectorField=check_vectorfield, show_obstacle_number=True)
@@ -142,3 +170,120 @@ def run_obstacle_description():
                     point_posX=pointX_widget, point_posY=pointY_widget,
                     x_low=fixed(x_lim[0]), x_high=fixed(x_lim[1]), 
                     y_low=fixed(y_lim[0]), y_high=fixed(y_lim[1]));
+
+def exercise_referencePoint():
+    x_lim, y_lim = [-16, 16], [-2, 18]
+
+    style = {'description_width': 'initial'}
+    # Interactive Widgets
+    x1_widget = FloatSlider(description='Obstacle center \( x_1\)', min=x_lim[0], max=x_lim[1], step=0.1, value=6, style=style)
+    x2_widget = FloatSlider(description='Obstacle center \( x_2\)', min=y_lim[0], max=y_lim[1], step=0.1, value=5, style=style)
+    angle_widget = FloatSlider(description='Obstacle orientation \( \Theta \)', min=-180, max=180, step=1, value=30, style=style)
+    referencePoint_direction = FloatSlider(description='Reference point: Direction', min=-180, max=180, step=1, value=0, style=style)
+    referencePoint_excentricity = FloatSlider(description='Reference point: Excentricity', min=0, max=0.999, step=0.01, value=0.0, style=style)
+
+    draw_style = widgets.Dropdown(
+        options=["None", "Vectorfield", "Simulated streamline"],
+        value="Simulated streamline",
+        description='Visualization',
+        disabled=False,
+    )
+
+    # Main function
+    interact_manual(widgetFunction_referencePoint, x1=x1_widget, x2=x2_widget,
+                    th_r=angle_widget, draw_style=draw_style,
+                    refPoint_dir=referencePoint_direction, refPoint_rat=referencePoint_excentricity, 
+                   x_low=fixed(x_lim[0]), x_high=fixed(x_lim[1]), 
+                    y_low=fixed(y_lim[0]), y_high=fixed(y_lim[1]));
+
+    print("")
+    # Change parameters and press <<Run Interact>> to apply.
+
+
+
+def choose_obstacles_number(n_obstacles, WidgetClass, x_lim, y_lim):
+    # Main function
+    print("Modify the parameters for the obstacle")
+    it_obs = widgets.Dropdown(
+        options=[ii+1 for ii in range(n_obstacles)],
+        value=1,
+        description='Iterator:',
+        disabled=False,
+    )
+    WidgetClass.set_obstacle_number(n_obstacles)
+    
+    style = {'description_width': 'initial'}
+    center1_widget1 = FloatSlider(description='Center Position \( x_1\)', min=x_lim[0], max=x_lim[1], step=0.1, value=-14, style=style)
+    center2_widget1 = FloatSlider(description='Center Position \( x_2\)', min=y_lim[0], max=y_lim[1], step=0.1, value=4, style=style)
+    angle_widget1 = FloatSlider(description='Orientation \( \Theta \)', min=-180, max=180, step=1, value=45, style=style)
+
+    interact(WidgetClass.set_obstacle_values, it_obs=it_obs, x0_1=center1_widget1, x0_2=center2_widget1, th_r=angle_widget1)
+
+    
+def exercise_intersectingObstacles():
+    x_lim, y_lim = [-16, 16], [-2, 18]
+
+    # Interactive Widgets
+    n_obs_widget = widgets.Dropdown(
+        options=[2,3,4],
+        value=2,
+        description='#',
+        disabled=False,
+    )
+
+    print("Choose the number of obstacles:")
+
+    WidgetClass = WidgetClass_intersection(x_lim=x_lim, y_lim=y_lim);
+    interact(choose_obstacles_number, n_obstacles=n_obs_widget, WidgetClass=fixed(WidgetClass),
+             x_lim=fixed(x_lim), y_lim=fixed(y_lim));
+
+    check_vectorfield = widgets.Checkbox(
+        value=False,
+        description='Draw Vectorfield',
+        disabled=False
+    )
+
+    interact_manual(WidgetClass.update, check_vectorfield=check_vectorfield);
+
+def exercise_dynamicModulation():
+    x_range, y_range = [-16, 16], [-2, 18]
+    x_init = samplePointsAtBorder_ipython(number_of_points=10, x_range=x_range, y_range=y_range)
+
+    x_init = np.zeros((2,1))
+    x_init[:,0] = [8, 1]
+    obs = []
+    x0=[-3, 8]
+    a=[2, 5]
+    p=[1,1]
+    th_r=0/180*pi
+    vel = [0, 0]
+    obs.append(Obstacle(a=a, p=p, x0=x0, th_r=th_r, sf=1))
+
+    x0=[3, 4]
+    a=[3, 4]
+    p=[1,1]
+    th_r=0/180*pi
+    vel = [0, 0]
+    obs.append(Obstacle(a=a, p=p, x0=x0, th_r=th_r, sf=1))
+
+
+    ani = run_animation_ipython(x_init, obs=obs, x_range=x_range, y_range=y_range, 
+                      dt=0.05, N_simuMax=1000, convergenceMargin=0.3, sleepPeriod=0.001, 
+                      RK4_int=True, hide_ticks=False, return_animationObject=True, figSize=(9.5,7), show_obstacle_number=True)
+    plt.ion()
+    ani.show()
+
+    style = {'description_width': 'initial'}
+    velx_widget = FloatSlider(description='Linear velocity \( \dot  x_1\)', min=-5.0, max=5.0, step=0.1, value=0, style=style)
+    vely_widget = FloatSlider(description='Linear velocity \( \dot  x_2\)', min=-5.0, max=5.0, step=0.1, value=0, style=style)
+    velAng_widget = FloatSlider(description='Angular velocity \( \omega\)', min=-5.0, max=5.0, step=0.1, value=0, style=style)
+
+    # obs_number = widgets.Dropdown(options=[ii+1 for ii in range(len(obs))],value=0, description='#', disabled=False)
+    obs_number = widgets.Dropdown(options=[ii+1 for ii in range(len(obs))],value=1, description='#', disabled=False)
+
+    print("The video can be paused and continued by pressing onto the image.")
+    print("")
+    print("Modify the parameters for the obstacle:")
+
+    interact_manual(ani.set_velocity, obs_number=obs_number, vel_x =velx_widget, vel_y=vely_widget, vel_rot=velAng_widget, iteration_at_one=fixed(True));
+

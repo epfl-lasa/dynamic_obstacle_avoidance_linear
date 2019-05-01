@@ -62,8 +62,6 @@ def samplePointsAtBorder_ipython(number_of_points, x_range, y_range, obs=[]):
 class Animated_ipython():
     """An animated scatter plot using matplotlib.animations.FuncAnimation."""
     def __init__(self, x0, obs=[], N_simuMax = 600, dt=0.01, attractorPos='default', convergenceMargin=0.01, x_range=[-10,10], y_range=[-10,10], zRange=[-10,10], sleepPeriod=0.03, RK4_int = False, dynamicalSystem=linearAttractor, hide_ticks=True, figSize=(8,5), show_obstacle_number=False):
-
-        print("this is ipython")
         self.dim = x0.shape[0]
 
         # Initialize class variables
@@ -147,8 +145,6 @@ class Animated_ipython():
             self.ani = FuncAnimation(self.fig, self.update, frames=None)
         else:
             self.ani = FuncAnimation(self.fig, self.update, interval=1, frames=None, repeat=False, init_func=self.setup_plot, blit=True, save_count=self.N_simuMax-2)
-
-        print("ended that")
 
 
     def update(self, iSim):
@@ -339,7 +335,10 @@ class Animated_ipython():
                     print('Convergence with tolerance of {} reached after {} iterations.'.format(sum(self.lastConvergences), self.iSim+1) )
                     self.ani.event_source.stop()
 
-    def set_velocity(self, obs_number=0, vel_x =0.0, vel_y=0.0, vel_rot=0):
+    def set_velocity(self, obs_number=0, vel_x =0.0, vel_y=0.0, vel_rot=0, iteration_at_one=False):
+        if iteration_at_one:
+            obs_number -= 1
+            
         self.obs[obs_number].xd = np.array([vel_x, vel_y])
         self.obs[obs_number].w = vel_rot
         
@@ -394,11 +393,10 @@ def run_animation_ipython(*args, animationName="test", saveFigure=False,
         except:
             print('\n\nWARNING: saving interrupted.')
 
-        # print('Saving finished.')
         plt.close('all')
         
     elif return_animationObject:
-        print("Returning animation object")
+        # print("Returning animation object")
         return anim
     else:
         print('Starting animation')

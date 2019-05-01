@@ -5,19 +5,21 @@ Obstacle Avoidance Algorithm script with vecotr field
 @date 2018-02-15
 '''
 
-# Command to automatically reload libraries -- in ipython before exectureion
+# General classes
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-
+from numpy import pi
+import copy
 import time
 
-from dynamic_obstacle_avoidance.dynamical_system.dynamical_system_representation import *
-from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
-from dynamic_obstacle_avoidance.obstacle_avoidance.modulation import *
+from dynamic_obstacle_avoidance.dynamical_system import *
+from dynamic_obstacle_avoidance.obstacle_avoidance.linear_modulations import *
 from dynamic_obstacle_avoidance.obstacle_avoidance.obs_common_section import *
 from dynamic_obstacle_avoidance.obstacle_avoidance.obs_dynamic_center_3d import *
-from dynamic_obstacle_avoidance.obstacle_avoidance.linear_modulations import *
+# from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import Obstacle
+# from dynamic_obstacle_avoidance.visualization.vector_field_visualization import Simulation_vectorFields
+# from dynamic_obstacle_avoidance.visualization.animated_simulation import *
+# from dynamic_obstacle_avoidance.visualization.animated_simulation_ipython import *
+
 
 def pltLines(pos0, pos1, xlim=[-100,100], ylim=[-100,100]):
     if pos1[0]-pos0[0]: # m < infty
@@ -68,7 +70,8 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
 
     # Adjust dynamic center
     intersection_obs = obs_common_section(obs)
-    dynamic_center_3d(obs, intersection_obs)
+    if len(obs)>1:
+        dynamic_center_3d(obs, intersection_obs)
 
     if len(figHandle): 
         fig_ifd, ax_ifd = figHandle[0], figHandle[1] 
