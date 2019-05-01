@@ -107,7 +107,7 @@ class WidgetClass_intersection():
         
     def update(self, check_vectorfield=True):
         obs_cp = self.obs[:self.n_obstacles]
-        Simulation_vectorFields(self.x_lim, self.y_lim, point_grid=70, obs=obs_cp, xAttractor=self.xAttractor, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(13.,10), draw_vectorField=check_vectorfield)
+        Simulation_vectorFields(self.x_lim, self.y_lim, point_grid=70, obs=obs_cp, xAttractor=self.xAttractor, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(13.,10), draw_vectorField=check_vectorfield, show_obstacle_number=True)
 
 
 def run_obstacle_description():

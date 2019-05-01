@@ -58,7 +58,7 @@ def plot_streamlines(points_init, ax, obs=[], attractorPos=[0,0],
 
     # return x_pos
 
-def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[], sysDyn_init=False, xAttractor = np.array(([0,0])), saveFigure = False, figName='default', noTicks=True, showLabel=True, figureSize=(16.,13), obs_avoidance_func=obs_avoidance_interpolation_moving, attractingRegion=False, drawVelArrow=False, colorCode=False, streamColor=[0.05,0.05,0.7], obstacleColor=[], plotObstacle=True, plotStream=True, figHandle=[], alphaVal=1, dynamicalSystem=linearAttractor, draw_vectorField=True, points_init=[]):
+def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[], sysDyn_init=False, xAttractor = np.array(([0,0])), saveFigure = False, figName='default', noTicks=True, showLabel=True, figureSize=(16.,13), obs_avoidance_func=obs_avoidance_interpolation_moving, attractingRegion=False, drawVelArrow=False, colorCode=False, streamColor=[0.05,0.05,0.7], obstacleColor=[], plotObstacle=True, plotStream=True, figHandle=[], alphaVal=1, dynamicalSystem=linearAttractor, draw_vectorField=True, points_init=[], show_obstacle_number=False):
 
     dim = 2
 
@@ -97,6 +97,9 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
             
             plt.gca().add_patch(obs_polygon_sf[n])
             plt.gca().add_patch(obs_polygon[n])
+
+            if show_obstacle_number:
+                ax_ifd.annotate('{}'.format(n+1), xy=np.array(obs[n].x0)+0.16, textcoords='data', size=16, weight="bold")
             
             ax_ifd.plot(obs[n].x0[0],obs[n].x0[1],'k.')
             

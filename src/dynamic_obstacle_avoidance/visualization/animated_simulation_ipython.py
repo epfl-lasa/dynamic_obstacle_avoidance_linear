@@ -61,7 +61,7 @@ def samplePointsAtBorder_ipython(number_of_points, x_range, y_range, obs=[]):
 ##### Anmation Function #####
 class Animated_ipython():
     """An animated scatter plot using matplotlib.animations.FuncAnimation."""
-    def __init__(self, x0, obs=[], N_simuMax = 600, dt=0.01, attractorPos='default', convergenceMargin=0.01, x_range=[-10,10], y_range=[-10,10], zRange=[-10,10], sleepPeriod=0.03, RK4_int = False, dynamicalSystem=linearAttractor, hide_ticks=True, figSize=(8,5)):
+    def __init__(self, x0, obs=[], N_simuMax = 600, dt=0.01, attractorPos='default', convergenceMargin=0.01, x_range=[-10,10], y_range=[-10,10], zRange=[-10,10], sleepPeriod=0.03, RK4_int = False, dynamicalSystem=linearAttractor, hide_ticks=True, figSize=(8,5), show_obstacle_number=False):
 
         print("this is ipython")
         self.dim = x0.shape[0]
@@ -110,6 +110,9 @@ class Animated_ipython():
         self.contour = []
         self.centers = []
         self.cent_dyns = []
+        self.show_obstacle_number = show_obstacle_number
+        if self.show_obstacle_number:
+            self.number_obs = []
 
         # Setup the figure and axes.
         if self.dim==2:
@@ -165,6 +168,9 @@ class Animated_ipython():
 
             self.centers[o].set_xdata(self.obs[o].x0[0])
             self.centers[o].set_ydata(self.obs[o].x0[1])
+            if self.show_obstacle_number:
+                self.number_obs[o].set_position((self.obs[o].x0[0]+0.16, self.obs[o].x0[1]+0.16))
+                                        
             if self.dim==3:
                 self.centers[o].set_3d_properties(zs=obs[o].x0[2])
 
@@ -259,10 +265,11 @@ class Animated_ipython():
             # Center of obstacle
             center, = self.ax.plot([],[],'k.')    
             self.centers.append(center)
+            if self.show_obstacle_number:
+                annot = self.ax.annotate('{}'.format(n+1), xy=np.array(self.obs[n].x0)+0.16, textcoords='data', size=16, weight="bold")
+                self.number_obs.append(annot)
             
-            # if hasattr(self.obs[n], 'center_dyn'):# automatic adaptation of center
             cent_dyn, = self.ax.plot([],[], 'k+',  linewidth=18, markeredgewidth=4, markersize=13)
-                
             self.cent_dyns.append(cent_dyn)
 
             
