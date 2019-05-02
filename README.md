@@ -2,13 +2,25 @@
 ---
 This package contains a dynamic obstacle avoidance algorithm for concave and convex obstacles as developped in [1]. The algorithm is an extension of the work of [2].
 ---
-This module requires python 3 including certain libraries which can be found in requirements-pip.txt.
+Requirements: conda, jupyter notebook, python.
 
-To install, clone the code from github and make sure all pip requirement are met:
+To setup got to your install/code directory, and type:
 ```
 git clone https://github.com/epfl-lasa/dynamic_obstacle_avoidance_linear
-pip install -r requirements-pip.txt
+conda env create -f environment.yml
+conda activate obstacle_avoidance_linear
+python setup.py
 ```
+
+### Interactive jupyter notebook module
+There is an interactive jupyter module, to familarize with the algorithm. From the install/code directory it can by run with:
+```
+cd notebook
+jupyter notebook
+```
+
+To execute an interactive script online click here:
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/hubernikus/dynamic_obstacle_avoidance_python/master?filepath=notebook)
 
 ## Quick start
 Several examples of the obstacle avoidance algorithm have been ipmlemented. The highly reactive nature of the algorithm allows it to be used to avoid crowded environment with fastly chaning movement of humans. 

@@ -20,7 +20,6 @@ from dynamic_obstacle_avoidance.obstacle_avoidance.obs_dynamic_center_3d import 
 # from dynamic_obstacle_avoidance.visualization.animated_simulation import *
 # from dynamic_obstacle_avoidance.visualization.animated_simulation_ipython import *
 
-
 def pltLines(pos0, pos1, xlim=[-100,100], ylim=[-100,100]):
     if pos1[0]-pos0[0]: # m < infty
         m = (pos1[1] - pos0[1])/(pos1[0]-pos0[0])
