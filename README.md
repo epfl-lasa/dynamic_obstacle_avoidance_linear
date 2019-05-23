@@ -9,7 +9,7 @@ To setup got to your install/code directory, and type:
 git clone https://github.com/hubernikus/dynamic_obstacle_avoidance_python
 conda env create -f environment.yml
 conda activate obstacle_avoidance_linear
-python setup.py
+python setup.py install
 ```
 
 ### Interactive jupyter notebook module
