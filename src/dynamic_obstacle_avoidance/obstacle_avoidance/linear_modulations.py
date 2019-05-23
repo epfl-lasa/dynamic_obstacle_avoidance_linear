@@ -75,7 +75,7 @@ def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPo
 
         # Move to obstacle centered frame
         x_t = R[:,:,n].T @ (x-obs[n].x0)
-        E[:,:,n], D[:,:,n], Gamma[n], E_orth[:,:,n] = compute_modulation_matrix(x_t,obs[n], R[:,:,n])
+        E[:,:,n], D[:,:,n], Gamma[n], E_orth[:,:,n] = compute_modulation_matrix(x_t, obs[n], R[:,:,n])
         
     if N_attr:
         d_a = LA.norm(x - np.array(attractor)) # Distance to attractor
