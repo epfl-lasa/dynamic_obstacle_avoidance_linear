@@ -6,6 +6,8 @@
 Copyright (c) 2019 under GPU license. 
 '''
 
+import matplotlib.pyplot as plt
+
 import numpy as np
 import numpy.linalg as LA
 
@@ -16,8 +18,8 @@ import warnings
 
 import sys
 
-def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPow = 2):
-    
+
+def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPow=2, repulsive_gammaMargin=0.01):
     # This function modulates the dynamical system at position x and dynamics xd such that it avoids all obstacles obs. It can furthermore be forced to converge to the attractor. 
     # 
     # INPUT
@@ -126,12 +128,21 @@ def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPo
     k_ds = np.zeros((d-1, N_obs))
         
     for n in range(N_obs):
+        # xd_R = LA.pinv(E[:,:,n]) @ R[:,:,n].T @ xd
+        # import pdb; pdb.set_trace() ## DEBUG ##
+        
         M[:,:,n] = R[:,:,n] @ E[:,:,n] @ D[:,:,n] @ LA.pinv(E[:,:,n]) @ R[:,:,n].T
+        
         xd_hat[:,n] = M[:,:,n] @ xd # velocity modulation
         
         # if False:
-        if Gamma[n] < 1: # Safety (Remove for pure algorithm)
-            repulsive_velocity =  ((1/Gamma[n])**5-1)*5 # hyperparemeters arleady in formula
+        if Gamma[n] < (1+repulsive_gammaMargin): # Safety for implementation (Remove for pure algorithm)
+            repulsive_power = 5
+            repulsive_factor = 5
+            repulsive_gamma = (1+repulsive_gammaMargin)
+            
+            repulsive_velocity =  ((repulsive_gamma/Gamma[n])**repulsive_power-
+                                    repulsive_gamma)*repulsive_factor 
             # print("\n\n Add repulsive vel: {} \n\n".format(repulsive_velocity))
             xd_hat[:,n] += R[:,:,n] @ E[:,0,n] * repulsive_velocity
 
@@ -157,6 +168,9 @@ def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPo
             sumHat = max(min(sumHat, 1), -1)
             warnings.warn('cosinus out of bound!')
             
+        # !!!! ??? is this the same as 
+        # np.arccos(sumHat) == np.arccos(xd_hat_normalized_velocityFrame[0])
+        
         k_ds[:,n] = np.arccos(sumHat)*k_fn.squeeze()
 
     # xd_hat_magnitude = np.sqrt(np.sum(xd_hat**2, axis=0) ) # TODO - remove as already caclulated
@@ -188,9 +202,7 @@ def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPo
     return xd
 
 
-
-
-def compute_modulation_matrix(x_t, obs, R):
+def compute_modulation_matrix(x_t, obs, R, matrix_singularity_margin=pi/2.0*1.05):
     # The function evaluates the gamma function and all necessary components needed to construct the modulation function, to ensure safe avoidance of the obstacles.
     # Beware that this function is constructed for ellipsoid only, but the algorithm is applicable to star shapes.
     # 
@@ -204,58 +216,88 @@ def compute_modulation_matrix(x_t, obs, R):
     # D [dim x dim]: Eigenvalue matrix which is responsible for the modulation
     # Gamma [dim]: Distance function to the obstacle surface (in direction of the reference vector)
     # E_orth [dim x dim]: Orthogonal basis matrix with rows the normal and tangent
-    #
 
-    dim = np.array(x_t).shape[0]
+    dim = obs.dim
     
-    # Consider safety margin sf for axis length
-    if hasattr(obs, 'sf'):
-        a = np.array(obs.sf)*np.array(obs.a)
-    elif hasattr(obs, 'sf_a'):
-        a = np.tile(obs.a, 2) + np.array(obs.sf_a)
-    else:
-        a = np.array(obs.a)
-
     if hasattr(obs, 'rho'):
         rho = np.array(obs.rho)
     else:
         rho = 1
 
-    p = np.array(obs.p) # convert to array for faster calculation
-        
-    Gamma = np.sum((x_t/a)**(2*p)) # distance function for ellipsoids
+    Gamma = obs.get_gamma(x_t, in_global_frame=False) # function for ellipsoids
+
+    # reference_direction
+    # array([0.99979922, 0.02003783])
+
+    # x_t
+    # array([-2.33109637,  1.01576377])
+
+    # th_r
+    # 0.6981317007977318
     
-    normal_vector = (2*p/obs.a*(x_t/a)**(2*p - 1)) # for ellipsoid
-    normal_vector = normal_vector/LA.norm(normal_vector)
+    normal_vector = obs.get_normal_direction(x_t, in_global_frame=False)
+    reference_direction = obs.get_reference_direction(x_t, in_global_frame=False)
+    
+    
 
-    if hasattr(obs,'center_dyn'):  # automatic adaptation of center 
-        reference_direction = - (x_t - R.T @ (np.array(obs.center_dyn) - np.array(obs.x0)) )
-    else:
-        reference_direction = - x_t
-
-    ref_norm = LA.norm(reference_direction)
-    E_orth = np.zeros((dim, dim))
-    if ref_norm:
-        # Create orthogonal basis matrix        
-        
-        E_orth[:,0] = normal_vector# Basis matrix
-
-        for ii in range(1,dim):
-            if dim ==2:
-                E_orth[0, 1] = E_orth[1, 0]
-                E_orth[1, 1] = - E_orth[0, 0]
+    # Check if there was correct placement of reference point
+    Gamma_referencePoint = obs.get_gamma(obs.reference_point)
+    if Gamma_referencePoint >= 1:
                 
-            # TODO higher dimensions
-            # E[:dim-(ii), ii] = normal_vector[:dim-(ii)]*normal_vector[dim-(ii)]
-            # E[dim-(ii), ii] = -np.dot(normal_vector[:dim-(ii)], normal_vector[:dim-(ii)])
+        # surface_position = obs.get_obstace_radius* x_t/LA.norm(x_t)
+        # direction_surface2reference = obs.get_reference_point()-surface_position
 
-            E_orth[:, ii] = E_orth[:, ii]/LA.norm(E_orth[:, ii])
-
-        E = np.copy((E_orth))
-        E[:,0] = - reference_direction/ref_norm
-
+        # Per default negative
+        referenceNormal_angle = np.arccos(reference_direction.T @ normal_vector)
+        
+        # if referenceNormal_angle < (matrix_singularity_margin):
+            # x_global = obs.transform_relative2global(x_t)
+            # plt.quiver(x_global[0],x_global[1], normal_vector[0], normal_vector[1], 'r')
+            # plt.quiver(x_global[0],x_global[1], normal_vector[0], normal_vector[1], color='r')
+            # plt.quiver(x_global[0],x_global[1], reference_direction[0], reference_direction[1], color='b')
+            
+            # referenceNormal_angle = np.min([0, referenceNormal_angle-pi/2.0])
     
-    # Diagonal Eigenvalue Matrix
+            # Gamma_convexHull = 1*referenceNormal_angle/(matrix_singularity_margin-pi/2.0)
+            # Gamma = np.max([Gamma, Gamma_convexHull])
+            
+            # reference_orthogonal = (normal_vector -
+                                    # reference_direction * reference_direction.T @ normal_vector)
+            # normal_vector = (reference_direction*np.sin(matrix_singularity_margin)
+                             # + reference_orthogonal*np.cos(matrix_singularity_margin))
+
+            # plt.quiver(x_global[0],x_global[1], normal_vector[0], normal_vector[1], color='g')
+            # plt.ion()
+            
+    E_orth = np.zeros((dim, dim))
+    
+    # Create orthogonal basis matrix        
+    E_orth[:,0] = normal_vector# Basis matrix
+
+    for ii in range(1,dim):
+
+        if dim ==2:
+            E_orth[0, 1] = E_orth[1, 0]
+            E_orth[1, 1] = - E_orth[0, 0]
+            
+        # TODO higher dimensions
+        # E[:dim-(ii), ii] = normal_vector[:dim-(ii)]*normal_vector[dim-(ii)]
+        # E[dim-(ii), ii] = -np.dot(normal_vector[:dim-(ii)], normal_vector[:dim-(ii)])
+        # E_orth[:, ii] = E_orth[:, ii]/LA.norm(E_orth[:, ii])
+
+    E = np.copy((E_orth))
+    E[:,0] = -reference_direction
+
+    eigenvalue_reference, eigenvalue_tangent = calculate_eigenvalues(Gamma)
+    D = np.diag(np.hstack((eigenvalue_reference, np.ones(dim-1)*eigenvalue_tangent)))
+
+    # print('norm ref prod', reference_direction.T@normal_vector)
+    # import pdb; pdb.set_trace() ## DEBUG ##
+    
+    return E, D, Gamma, E_orth
+
+
+def calculate_eigenvalues(Gamma, rho=1):
     if Gamma<=1:# point inside the obstacle
         delta_eigenvalue = 1 
     else:
@@ -263,10 +305,7 @@ def compute_modulation_matrix(x_t, obs, R):
     
     eigenvalue_reference = 1 - delta_eigenvalue
     eigenvalue_tangent = 1 + delta_eigenvalue
-    
-    D = np.diag(np.hstack((eigenvalue_reference, np.ones(dim-1)*eigenvalue_tangent)))
-
-    return E, D, Gamma, E_orth
+    return eigenvalue_reference, eigenvalue_tangent
 
 
 def obs_avoidance_rk4(dt, x, obs, obs_avoidance=obs_avoidance_interpolation_moving, ds=linearAttractor, x0=False):

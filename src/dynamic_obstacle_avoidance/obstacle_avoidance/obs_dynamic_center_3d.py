@@ -8,7 +8,10 @@ import warnings
 from dynamic_obstacle_avoidance.obstacle_avoidance.modulation import compute_weights
 
 def dynamic_center_3d(obs, intersection_obs, marg_dynCenter=1.3, N_distStep=3, resol_max=1000, N_resol = 16, numbFactor_closest=2 ):
-    # TODO -- extend to 3 or more obstacles
+
+    N_obs = len(obs)
+    if N_obs < 2:
+        return # no intersction possible
 
     # Convert to single list
     intersection_temp = []
@@ -17,9 +20,7 @@ def dynamic_center_3d(obs, intersection_obs, marg_dynCenter=1.3, N_distStep=3, r
             if jj not in intersection_temp:
                 intersection_temp.append(jj)
     intersection_obs = intersection_temp
-
-
-    N_obs = len(obs)
+    
     for ii in range(N_obs): # Default value for dynamic center
         if ii in intersection_obs:
             continue

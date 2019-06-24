@@ -143,17 +143,14 @@ def compute_eigenvalueMatrix(Gamma, rho=1, dim=2, radialContuinity=True):
     return np.diag(np.hstack((lambda_referenceDir, np.ones(dim-1)*lambda_tangentDir)) )
 
 
-         
-
-
-def compute_weights(distMeas, N=0, distMeas_min=1, weightType='inverseGamma', weightPow=2):
+def compute_weights(distMeas, N=0, distMeas_lowerLimit=1, weightType='inverseGamma', weightPow=2):
     # UNTITLED5 Summary of this function goes here
     #   Detailed explanation goes here
 
     distMeas = np.array(distMeas)
     n_points = distMeas.shape[0]
     
-    critical_points = distMeas <= distMeas_min
+    critical_points = distMeas <= distMeas_lowerLimit
     
     if np.sum(critical_points): # at least one
         if np.sum(critical_points)==1:
@@ -166,7 +163,7 @@ def compute_weights(distMeas, N=0, distMeas_min=1, weightType='inverseGamma', we
             return w
         
     if weightType == 'inverseGamma':
-        distMeas = distMeas - distMeas_min
+        distMeas = distMeas - distMeas_lowerLimit
         w = 1/distMeas**weightPow
         w = w/np.sum(w) # Normalization
 
@@ -229,8 +226,12 @@ def obs_check_collision_2d(obs_list, XX, YY):
         # on the surface, we have: \Gamma = \sum_{i=1}^d (xt_i/a_i)^(2p_i) == 1
         R = compute_R(d,obs_list[it_obs].th_r)
 
-        Gamma = np.sum( ( 1/obs_list[it_obs].sf * R.T @ (points - np.tile(np.array([obs_list[it_obs].x0]).T,(1,N_points) ) ) / np.tile(np.array([obs_list[it_obs].a]).T, (1, N_points)) )**(np.tile(2*np.array([obs_list[it_obs].p]).T, (1,N_points)) ), axis=0 )
+        # Gamma = np.sum( ( 1/obs_list[it_obs].sf * R.T @ (points - np.tile(np.array([obs_list[it_obs].x0]).T,(1,N_points) ) ) / np.tile(np.array([obs_list[it_obs].a]).T, (1, N_points)) )**(np.tile(2*np.array([obs_list[it_obs].p]).T, (1,N_points)) ), axis=0 )
 
+        Gamma = np.zeros(N_points)
+        for ii in range(N_points):
+            Gamma[ii] = obs_list[it_obs].get_gamma(points[:,ii], in_global_frame=True)
+        
         noColl = (noColl* Gamma>1)
 
     return np.reshape(noColl, dim_points)

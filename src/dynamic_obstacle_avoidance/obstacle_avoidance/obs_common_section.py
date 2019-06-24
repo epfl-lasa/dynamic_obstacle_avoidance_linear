@@ -79,8 +79,10 @@ def obs_common_section(obs):
 
     N_obs = len(obs)
     # No intersection region 
-    if not N_obs:
+    if N_obs <= 1:
         return []
+    import pdb; pdb.set_trace() ## DEBUG ##
+    
 
     # Intersction surface
     intersection_obs = []
@@ -98,7 +100,7 @@ def obs_common_section(obs):
     
     for it_obs in range(N_obs):
         rotMat[:,:,it_obs] = np.array(( obs[it_obs].rotMatrix ))
-        obs[it_obs].draw_ellipsoid()
+        obs[it_obs].draw_obstacle()
         obs[it_obs].cent_dyn = np.copy(obs[it_obs].x0) # set default value
         
     for it_obs1 in range(N_obs):

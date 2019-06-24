@@ -11,14 +11,13 @@ from numpy import pi
 import copy
 import time
 
+import matplotlib.pyplot as plt
+import matplotlib
+
 from dynamic_obstacle_avoidance.dynamical_system import *
 from dynamic_obstacle_avoidance.obstacle_avoidance.linear_modulations import *
 from dynamic_obstacle_avoidance.obstacle_avoidance.obs_common_section import *
 from dynamic_obstacle_avoidance.obstacle_avoidance.obs_dynamic_center_3d import *
-# from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import Obstacle
-# from dynamic_obstacle_avoidance.visualization.vector_field_visualization import Simulation_vectorFields
-# from dynamic_obstacle_avoidance.visualization.animated_simulation import *
-# from dynamic_obstacle_avoidance.visualization.animated_simulation_ipython import *
 
 def pltLines(pos0, pos1, xlim=[-100,100], ylim=[-100,100]):
     if pos1[0]-pos0[0]: # m < infty
@@ -34,12 +33,14 @@ def pltLines(pos0, pos1, xlim=[-100,100], ylim=[-100,100]):
 
 
 def plot_streamlines(points_init, ax, obs=[], attractorPos=[0,0],
-                     dim=2, dt=0.05, max_simu_step=1000, convergence_margin=0.03):
+                     dim=2, dt=0.01, max_simu_step=200, convergence_margin=0.03):
+    
     n_points = np.array(points_init).shape[1]
 
     x_pos = np.zeros((dim, max_simu_step+1, n_points))
     x_pos[:,0,:] = points_init
 
+    it_count = 0
     for iSim in range(max_simu_step):
         for j in range(n_points):
             x_pos[:, iSim+1,j] = obs_avoidance_rk4(
@@ -50,8 +51,11 @@ def plot_streamlines(points_init, ax, obs=[], attractorPos=[0,0],
         if (np.sum((x_pos[:, iSim+1, :]-np.tile(attractorPos, (n_points,1)).T)**2)
             < convergence_margin):
             x_pos = x_pos[:, :iSim+2, :]
+
+            print("Convergence reached after {} iterations.".format(it_count))
             break
 
+        it_count += 1
     for j in range(n_points):
         ax.plot(x_pos[0, :, j], x_pos[1, :, j], '--', lineWidth=4)
         ax.plot(x_pos[0, 0, j], x_pos[1, 0, j], 'k*', markeredgewidth=4, markersize=13)
@@ -59,17 +63,17 @@ def plot_streamlines(points_init, ax, obs=[], attractorPos=[0,0],
 
     # return x_pos
 
-def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[], sysDyn_init=False, xAttractor = np.array(([0,0])), saveFigure = False, figName='default', noTicks=True, showLabel=True, figureSize=(16.,13), obs_avoidance_func=obs_avoidance_interpolation_moving, attractingRegion=False, drawVelArrow=False, colorCode=False, streamColor=[0.05,0.05,0.7], obstacleColor=[], plotObstacle=True, plotStream=True, figHandle=[], alphaVal=1, dynamicalSystem=linearAttractor, draw_vectorField=True, points_init=[], show_obstacle_number=False):
+def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[], sysDyn_init=False, xAttractor = np.array(([0,0])), saveFigure=False, figName='default', noTicks=True, showLabel=True, figureSize=(12.,9.5), obs_avoidance_func=obs_avoidance_interpolation_moving, attractingRegion=False, drawVelArrow=False, colorCode=False, streamColor=[0.05,0.05,0.7], obstacleColor=[], plotObstacle=True, plotStream=True, figHandle=[], alphaVal=1, dynamicalSystem=linearAttractor, draw_vectorField=True, points_init=[], show_obstacle_number=False, automatic_reference_point=True):
 
     dim = 2
 
     # Numerical hull of ellipsoid 
     for n in range(len(obs)): 
-        obs[n].draw_ellipsoid(numPoints=50) # 50 points resolution 
+        obs[n].draw_obstacle(numPoints=50) # 50 points resolution 
 
     # Adjust dynamic center
-    intersection_obs = obs_common_section(obs)
-    if len(obs)>1:
+    if automatic_reference_point:
+        intersection_obs = obs_common_section(obs)
         dynamic_center_3d(obs, intersection_obs)
 
     if len(figHandle): 
@@ -87,15 +91,15 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
             
             plt.plot([x_obs_sf[i][0] for i in range(len(x_obs_sf))],
                 [x_obs_sf[i][1] for i in range(len(x_obs_sf))], 'k--')
-            
-            obs_polygon_sf.append( plt.Polygon(obs[n].x_obs_sf, zorder=1))
-            obs_polygon.append( plt.Polygon(obs[n].x_obs, zorder=2))
+
+            obs_polygon.append( plt.Polygon(obs[n].x_obs, zorder=2, alpha=0.5))            
             if len(obstacleColor)==len(obs):
-                obs_polygon_sf[n].set_color([1,1,1])
                 obs_polygon[n].set_color(obstacleColor[n])
             else:
-                obs_polygon_sf[n].set_color([1,1,1])
                 obs_polygon[n].set_color(np.array([176,124,124])/255)
+
+            obs_polygon_sf.append( plt.Polygon(obs[n].x_obs_sf, zorder=1, alpha=0.2))
+            obs_polygon_sf[n].set_color([1,1,1])
             
             plt.gca().add_patch(obs_polygon_sf[n])
             plt.gca().add_patch(obs_polygon[n])
@@ -103,11 +107,14 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
             if show_obstacle_number:
                 ax_ifd.annotate('{}'.format(n+1), xy=np.array(obs[n].x0)+0.16, textcoords='data', size=16, weight="bold")
             
-            ax_ifd.plot(obs[n].x0[0],obs[n].x0[1],'k.')
+            ax_ifd.plot(obs[n].x0[0], obs[n].x0[1], 'k.')
             
-            if hasattr(obs[n], 'center_dyn'):# automatic adaptation of center 
-                ax_ifd.plot(obs[n].center_dyn[0],obs[n].center_dyn[1], 'k+', linewidth=18, markeredgewidth=4, markersize=13)
-
+            # automatic adaptation of center
+            reference_point = obs[n].get_reference_point(in_global_frame=True)
+            
+            if not any(reference_point==None):
+                ax_ifd.plot(reference_point[0],reference_point[1], 'k+', linewidth=18, markeredgewidth=4, markersize=13)
+                
             if drawVelArrow and np.linalg.norm(obs[n].xd)>0:
                 col=[0.5,0,0.9]
                 fac=5 # scaling factor of velocity
@@ -150,6 +157,32 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
         N_x = N_y = 1
         XX, YY = np.array([[point_grid[0]]]), np.array([[point_grid[1]]])
 
+    # REMOVE after testing
+    # N_x = N_y = 1
+    # XX = np.zeros((N_x, N_y))
+    # YY = np.zeros((N_x, N_y))
+
+    it_start = 0
+    n_samples = 0
+    
+    pos1 = [-0.5, 3.18] 
+    pos2 = [-0.25, 3.18]
+
+    x_sample_range = [pos1[0], pos2[0]]
+    y_sample_range = [pos1[1], pos2[1]]
+
+    x_sample = np.linspace(x_sample_range[0], x_sample_range[1], n_samples)
+    y_sample = np.linspace(y_sample_range[0], y_sample_range[1], n_samples)
+
+    ii = 0
+    for ii in range(n_samples):
+        iy = (ii+it_start) % N_y
+        ix = int((ii+it_start) /N_x)
+        
+        XX[ix, iy] = x_sample[ii]
+        YY[ix, iy] = y_sample[ii]
+
+
     if attractingRegion: # Forced to attracting Region
         def obs_avoidance_temp(x, xd, obs):
             return obs_avoidance_func(x, xd, obs, xAttractor)
@@ -168,6 +201,7 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
                 
             xd_mod[:,ix,iy] = obs_avoidance(pos, xd_init[:,ix,iy], obs) # modulataed DS with IFD
     
+
     if sysDyn_init:
         fig_init, ax_init = plt.subplots(figsize=(5,2.5))
         res_init = ax_init.streamplot(XX, YY, xd_init[0,:,:], xd_init[1,:,:], color=[(0.3,0.3,0.3)])
@@ -177,6 +211,7 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
 
         plt.xlim(x_range)
         plt.ylim(y_range)
+        
 
     indOfnoCollision = obs_check_collision_2d(obs, XX, YY)
 
@@ -184,7 +219,7 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
     dx2_noColl = np.squeeze(xd_mod[1,:,:]) * indOfnoCollision
 
     end_time = time.time()
-    
+
     print('Number of points: {}'.format(point_grid*point_grid))
     print('Average time: {} ms'.format(np.round((end_time-start_time)/(N_x*N_y)*1000),5) )
     print('Modulation calulcation total: {} s'.format(np.round(end_time-start_time), 4))
@@ -202,8 +237,10 @@ def Simulation_vectorFields(x_range=[0,10],y_range=[0,10], point_grid=10, obs=[]
             dx2_noColl[ind_nonZero] = dx2_noColl[ind_nonZero]/normVel[ind_nonZero]
 
             res_ifd = ax_ifd.streamplot(XX, YY,dx1_noColl, dx2_noColl, color=streamColor, zorder=0)
+            # res_ifd = ax_ifd.quiver(XX, YY, dx1_noColl, dx2_noColl, color=streamColor, zorder=0)
+            # res_ifd = ax_ifd.quiver(XX, YY, xd_init[0,:,:], xd_init[1,:,:], color=[0.8, 0.2, 0.2], zorder=0)
+            
 
-        
     plt.ion()
     plt.show()
 

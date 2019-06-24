@@ -8,6 +8,8 @@ Dynamic Simulation - Obstacle Avoidance Algorithm
 
 '''
 
+import sys
+
 import numpy as np
 from numpy import pi
 
@@ -590,5 +592,12 @@ def main(simulationNumber=0, saveFigures=False):
 
     print('\n\n---- Script finished ---- \n\n')    
 
-main(simulationNumber=simulationNumber, saveFigures=saveFigures)
-    
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        simulationNumber = sys.argv[1]
+
+    if len(sys.argv) > 2:
+        saveFigures = sys.argv[2]
+
+    main(simulationNumber=simulationNumber, saveFigures=saveFigures)

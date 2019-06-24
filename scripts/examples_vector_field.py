@@ -1,4 +1,5 @@
-#!/usr/bin/python3
+#!/USSR/bin/python3
+
 '''
 Script which creates a variety of examples of local modulation of a vector field with obstacle avoidance. 
 
@@ -13,22 +14,99 @@ import matplotlib.pyplot as plt
 # Custom libraries
 from dynamic_obstacle_avoidance.dynamical_system.dynamical_system_representation import *
 from dynamic_obstacle_avoidance.visualization.vector_field_visualization import *  #
+from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
 
 ########################################################################
 # Chose the option you want to run as a number in the option list (integer from -2 to 10)
-options = [4]
+options = [-4]
 
 N_resol = 100
+
 saveFigures=False
 
 ########################################################################
 
 def main(options=[0], N_resol=100, saveFigures=False):
-
     for option in options:
         obs = [] # create empty obstacle list
-        if option==-2:
+        if option==-4:
+            x_lim = [-6,4.1]
+            y_lim = [-2,8]
 
+            # x_lim = [-10,100]
+            # y_lim = [-40,40]
+
+            xAttractor = [-3,0.1]
+
+            cuboid_obs = Cuboid(
+                axes_length=[3, 1.3],
+                center_position=[0, 2],
+                orientation=-40./180*pi,
+                absolut_margin=0.1)
+
+            obs.append(cuboid_obs)
+
+            cuboid_obs = Cuboid(
+                axes_length=[3, 1.3],
+                center_position=[0, 2],
+                orientation=-40./180*pi,
+                absolut_margin=0.1)
+            obs.append(cuboid_obs)
+
+                
+
+            # obs[0].set_reference_point([0.3, 3], in_global_frame=False)o
+
+            # Simulation_vectorFields(x_lim, y_lim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCube', noTicks=False, figureSize=(6.,5))
+
+            n_points = 10
+            points_init = np.vstack((np.ones(n_points)*x_lim[1], np.linspace(y_lim[0], y_lim[1], n_points)))
+            
+            points_init = points_init[:, 1:-1]
+            Simulation_vectorFields(x_lim, y_lim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCube', noTicks=False, draw_vectorField=False, points_init=points_init, automatic_reference_point=False)
+
+        if option==-3:
+
+            x_lim = [-6,4.1]
+            y_lim = [-2,8]
+
+            # x_lim = [-10,100]
+            # y_lim = [-40,40]
+
+            xAttractor = [-3,0.1]
+
+            a=[0.5, 1.5]
+            p=[1,1]
+            # x0=[5.5, -0.8]
+            x0=[0, 0]
+            # th_r=40/180*pi
+            th_r=0
+            sf=1
+            vel = [0, 0]
+            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=vel))
+
+
+            a=[0.5, 1.5]
+            p=[1,1]
+            x0=[0.3, 4]
+            th_r=-40/180*pi
+            sf=1
+            vel = [0, 0]
+            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=vel))
+
+            obs[0].set_reference_point([0.3, 3], in_global_frame=False)
+            obs[1].set_reference_point(obs[0].get_reference_point(in_global_frame=True), in_global_frame=True)
+            # Simulation_vectorFields(x_lim, y_lim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(6.,5))
+
+            n_points = 10
+            points_init = np.vstack((np.ones(n_points)*x_lim[1],
+                                     np.linspace(y_lim[0], y_lim[1], n_points)))
+            
+            points_init = points_init[:, 1:-1]
+            Simulation_vectorFields(x_lim, y_lim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCircle', noTicks=False, draw_vectorField=False, points_init=points_init, automatic_reference_point=False)
+
+
+        if option==-2:
             xlim = [-0.8,4.2]
             ylim = [-2,2]
 
@@ -267,32 +345,6 @@ def main(options=[0], N_resol=100, saveFigures=False):
             Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='twoObstacles_concaveRegion_top')
 
         if option==5:
-            # Obstacles being overlapping an being perpendicular or parallel to flow 
-            xlim = [-1,4]
-            ylim = [-2,2]
-
-            ### Three obstacles touching - convergence
-            xAttractor = np.array([0,0])
-
-            a = [1.1,1.1]
-            p = [1,1]
-            x0 = [1.6, 0.0]
-            th_r = +0/180*pi
-            sf = 1.0
-            xd = [-3,3]
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=xd))
-
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='movingObstacle_movingFrame', obs_avoidance_func=obs_avoidance_interpolation, drawVelArrow=True)
-
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='movingObstacle_partialMovingFrame', obs_avoidance_func=obs_avoidance_interpolation_moving, drawVelArrow=True)
-
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='movingObstacle_forcedAttraction', obs_avoidance_func=obs_avoidance_interpolation_moving, attractingRegion=True, drawVelArrow=True)
-
-            obs=[]
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='movingObstacle_notMoving', obs_avoidance_func=obs_avoidance_interpolation_moving, drawVelArrow=True)
-
-        if option==6:
             # TOOD -- radial displacement algorithm
             # Obstacles being overlapping an being perpendicular or parallel to flow 
 
@@ -335,7 +387,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
             Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='ellipse_tailEffectOn', obs_avoidance_func=obs_avoidance_interpolation_moving, showLabel=False)
 
-        if option==8:
+        if option==7:
             figSize = (14,12)
 
             xlim = [-10,10]
@@ -397,7 +449,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
             Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='wheelchairSimulation', obs_avoidance_func=obs_avoidance_interpolation_moving, showLabel=False, figureSize=figSize)
 
-        if option==10:
+        if option==8:
             # Two ellipses placed at x1=0 with dynamic center diplaced and center line in gray -- with color Code for velocity
             a=[0.5, 1.4]
             p=[1,1]
@@ -405,6 +457,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             th_r=0/180*pi
             sf=1
             obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+
 
             xlim = [-0.5,4]
             ylim = [-2,2]
@@ -427,8 +480,21 @@ def main(options=[0], N_resol=100, saveFigures=False):
                 plt.savefig('fig/' + 'ellipseCenterNotMiddle_centerLine_pres_colMap' + '.eps', bbox_inches='tight')
 
 
-    input("\nPress enter to continue...")
-
     
+
+if __name__ == ("__main__"):
+    if len(sys.argv) > 1:
+        options = sys.argv[1]
+
+    if len(sys.argv) > 2:
+        N_resol = sys.argv[2]
+
+    if len(sys.argv) > 3:
+        saveFigures = sys.argv[3]
+
+    main(options=options, N_resol=N_resol, saveFigures=saveFigures)
+
+    # input("\nPress enter to continue...")
+
 # Run function
-main(options=options, N_resol=N_resol, saveFigures=saveFigures)
+
