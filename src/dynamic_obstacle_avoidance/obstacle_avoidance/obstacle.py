@@ -56,16 +56,13 @@ def get_directional_weighted_sum(reference_direction, directions, weights, norma
     
     if visualize_debug and False:
         ref_abs = obs.transform_relative2global_dir(reference_direction)
-        # ref_abs = reference_direction
-
-        # position = [0,0]
+        
         position = obs.transform_relative2global(reference_direction)
         plt.quiver(position[0], position[1], ref_abs[0], ref_abs[1], color='g', label='Reference')
 
         dir_abs = np.zeros((dim, n_directions))
         for ii in range(n_directions):
             dir_abs[:, ii] = obs.transform_relative2global_dir(directions[:,ii])
-            # dir_abs[:, ii] = (directions[:,ii])
             plt.quiver(position[0], position[1], dir_abs[0,ii], dir_abs[1,ii], color='b', label='Normal')
 
     if normalize_reference:
@@ -83,8 +80,7 @@ def get_directional_weighted_sum(reference_direction, directions, weights, norma
 
     directions_referenceSpace = np.zeros(np.shape(directions))
     for ii in range(np.array(directions).shape[1]):
-        directions_referenceSpace[:,ii] = OrthogonalBasisMatrix.T @ directions[:,ii]
-
+        directions_referenceSpace[:,ii] = OrthogonalBasisMatrix.T.dot( directions[:,ii])
 
     directions_directionSpace = directions_referenceSpace[1:, :]
 
@@ -108,28 +104,29 @@ def get_directional_weighted_sum(reference_direction, directions, weights, norma
 
     norm_directionSpace_weightedSum = LA.norm(direction_dirSpace_weightedSum)
     if norm_directionSpace_weightedSum:
-        direction_weightedSum = (OrthogonalBasisMatrix
-                                 @ np.hstack((np.cos(norm_directionSpace_weightedSum),
-                                              np.sin(norm_directionSpace_weightedSum) / norm_directionSpace_weightedSum * direction_dirSpace_weightedSum)) )
-        
+        direction_weightedSum = (OrthogonalBasisMatrix.dot(
+                                  np.hstack((np.cos(norm_directionSpace_weightedSum),
+                                              np.sin(norm_directionSpace_weightedSum) / norm_directionSpace_weightedSum * direction_dirSpace_weightedSum)) ))
     else:
         direction_weightedSum = OrthogonalBasisMatrix[:,0]
     
-    # print('dir weighted sum', direction_weightedSum)
-    
     return direction_weightedSum
-
 
 class Obstacle:
     """ Class of obstacles """
-    def __init__(self,  orientation=0, th_r=None, sf=1, delta_margin=0, xd=[0,0], sigma=1,  w=0, x_start=0, x_end=0, timeVariant=False, a=[1,1], p=[1,1], x0=[0,0],  tail_effect=True, always_moving=True):
+    def __init__(self,  orientation=0, th_r=None, sf=1, delta_margin=0, xd=[0,0], sigma=1,  w=0, x_start=0, x_end=0, timeVariant=False, a=[1,1], p=[1,1], x0=None, center_position=[0,0],  tail_effect=True, always_moving=True, axes_length=None, is_boundary=False, Gamma_ref=0):
         # This class defines obstacles to modulate the DS around it
         # At current stage the function focuses on Ellipsoids, but can be extended to more general obstacles
         
         # Leave at the moment for backwards compatibility
-        self.a = a
-        self.axes = np.array(a)
-        self.axes_length = np.array(a)
+        if type(axes_length) == type(None):
+            self.a = a
+            self.axes = np.array(a)
+            self.axes_length = np.array(a)
+        else:
+            self.axes_length = axes_length
+            self.axes = np.array(a)
+            self.a = axes_length
 
         self.margin_axes =  self.axes*np.array(sf)+np.array(delta_margin)
         
@@ -139,17 +136,18 @@ class Obstacle:
         self.tail_effect = tail_effect # Modulation if moving away behind obstacle
 
         # Obstacle attitude
-        self.x0 = x0 # TODO remove and rename
-        self.center = x0 # new name for future version
+        if type(x0) != type(None):
+            center_position = x0 # TODO remove and rename
+        self.center_position = center_position
+        self.x0 = center_position
 
-        if type(th_r)!=None:
+        if type(th_r)!= type(None):
             orientation = th_r
+        self.th_r = orientation # TODO -- remove
         self.orientation = orientation
         
-        self.th_r = th_r # TODO -- remove
-
-        self.d = len(x0) #Dimension of space
-        self.dim = len(x0) #Dimension of space
+        self.d = len(self.center_position) #Dimension of space # TODO remove
+        self.dim = len(self.center_position) #Dimension of space
         
         self.rotMatrix = []
         self.compute_R() # Compute Rotation Matrix
@@ -179,26 +177,30 @@ class Obstacle:
         self.w = w # Rotational velocity
         self.xd = xd #
 
-        # Reference point // Dyanmic center
-        self.center_dyn = self.x0 # TODO remove and rename
-        self.reference_point = self.center # TODO remove and rename
+        # Relative Reference point // Dyanmic center
+        # self.reference_point = self.center_position # TODO remove and rename
+        self.reference_point = np.zeros(self.dim) # TODO remove and rename
+        self.center_dyn = self.reference_point # TODO remove and rename
 
         self.reference_point_is_inside = True
+
+        self.Gamma_ref = Gamma_ref
+        self.is_boundary = is_boundary
 
     # def update_reference(self, new_ref):
         # TODo write function
     
     def transform_global2relative(self, position=None, direction=None): # Inherit
-            return self.rotMatrix.T @ (position - np.array(self.x0))
+            return self.rotMatrix.T .dot(position - np.array(self.center_position))
 
     def transform_relative2global(self, position=None): # TODO - inherit
-        return (self.rotMatrix @ position)  + np.array(self.x0)
+        return (self.rotMatrix.dot(position))  + np.array(self.center_position)
         
     def transform_relative2global_dir(self, direction=None): # TODO - inherit
-        return self.rotMatrix @ direction
+        return self.rotMatrix.dot(direction)
 
     def transform_global2relative_dir(self, direction=None): # TODO - inherit
-        return self.rotMatrix.T @ direction
+        return self.rotMatrix.T.dot(direction)
 
     def extend_hull_around_reference(self, edge_reference_dist=0.2):
         # TODO add margin
@@ -242,7 +244,7 @@ class Obstacle:
             self.normal_vector[:, ii] = np.array([self.tangent_vector[1,ii],
                                                   -self.tangent_vector[0,ii]]) 
             # Check direction
-            self.normalDistance2center[ii] = self.normal_vector[:, ii].T @ self.hull_edge
+            self.normalDistance2center[ii] = self.normal_vector[:, ii].T.dot(self.hull_edge)
 
             if (self.normalDistance2center[ii] < 0):
                 self.normal_vector[:, ii] = self.normal_vector[:, ii]*(-1)
@@ -337,9 +339,17 @@ class Obstacle:
                 ind_intersect, dist_intersect = self.are_lines_intersecting(reference_line, tangent_line)
                 if ind_intersect:
                     return LA.norm(position)/dist_intersect
-                
-        return np.sum((position/self.margin_axes)**(2*self.p)) # distance
-    
+
+        # Original Gamma
+        Gamma = np.sum((position/self.margin_axes)**(2*self.p)) # distance
+        
+        # if self.is_boundary:
+            # if Gamma <= Gamma_ref:
+                # Gamma = sys.float_info.max
+            # else:
+                # Gamma = (1-self.Gamma_ref)/(Gamma-self.Gamma_ref)
+
+        return Gamma
 
     def get_distance_to_hullEdge(self, position):
         n_planes = self.normal_vector.shape[1]
@@ -410,6 +420,7 @@ class Obstacle:
         
 
     def get_normal_direction(self, position, in_global_frame=False, normalize=True):
+        
         if in_global_frame:
             position = self.transform_global2relative(position)
             
@@ -513,12 +524,12 @@ class Obstacle:
                     self.xd = self.func_xd(t)
                     self.w = self.func_w(t)
 
-                self.x0 = [self.x0[i] + dt*self.xd[i] for i in range(self.d)] # update position
+                self.center_position = [self.center_position[i] + dt*self.xd[i] for i in range(self.d)] # update position
 
                 if len(x_lim):
-                    self.x0[0] = np.min([np.max([self.x0[0], x_lim[0]]), x_lim[1]])
+                    self.center_position[0] = np.min([np.max([self.center_position[0], x_lim[0]]), x_lim[1]])
                 if len(y_lim):
-                    self.x0[1] = np.min([np.max([self.x0[1], y_lim[0]]), y_lim[1]])
+                    self.center_position[1] = np.min([np.max([self.center_position[1], y_lim[0]]), y_lim[1]])
 
                 if self.w: # if new rotation speed
 
@@ -583,11 +594,11 @@ class Obstacle:
             self.sf = 1
             
         if type(self.sf) == int or type(self.sf) == float:
-            x_obs_sf = R @ (self.sf*x_obs) + np.tile(np.array([self.x0]).T,(1,numPoints))
+            x_obs_sf = R @ (self.sf*x_obs) + np.tile(np.array([self.center_position]).T,(1,numPoints))
         else:
-            x_obs_sf = R @ (x_obs*np.tile(self.sf,(1,numPoints))) + np.tile(self.x0, (numPoints,1)).T 
+            x_obs_sf = R @ (x_obs*np.tile(self.sf,(1,numPoints))) + np.tile(self.center_position, (numPoints,1)).T 
 
-        x_obs = R @ x_obs + np.tile(np.array([self.x0]).T,(1,numPoints))
+        x_obs = R @ x_obs + np.tile(np.array([self.center_position]).T,(1,numPoints))
         
         if sum(a_temp) == 0:
             self.x_obs = x_obs.T.tolist()
@@ -649,7 +660,7 @@ class Cuboid(Obstacle):
 
         # Obstacle attitude
         self.center_position = np.array(center_position) # new name for future version
-        self.x0 = center_position # new name for future version
+        self.center_position = center_position # new name for future version
         
         self.orientation = orientation
         self.th_r = orientation

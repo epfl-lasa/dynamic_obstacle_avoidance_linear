@@ -29,44 +29,67 @@ saveFigures=False
 def main(options=[0], N_resol=100, saveFigures=False):
     for option in options:
         obs = [] # create empty obstacle list
+        if option==-5:
+            x_lim = [-3,6.1]
+            y_lim = [-5,5]
+            
+            cuboid_obs = Cuboid(
+                axes_length=[3, 3],
+                center_position=[1, 0],
+                orientation=0./180*pi,
+                absolut_margin=0.0)
+
+            obs.append(cuboid_obs)
+            xAttractor = [1., -1.5]
+            
+            fig_mod, ax_mod = Simulation_vectorFields(x_lim, y_lim,  obs=obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCube', noTicks=False, draw_vectorField=True,  automatic_reference_point=False, point_grid=10)
+
+            
         if option==-4:
-            x_lim = [-6,4.1]
-            y_lim = [-2,8]
+            x_lim = [-3,6.1]
+            y_lim = [-5,5]
 
             # x_lim = [-10,100]
             # y_lim = [-40,40]
 
-            xAttractor = [-3,0.1]
-
             cuboid_obs = Cuboid(
-                axes_length=[3, 1.3],
-                center_position=[0, 2],
-                orientation=-40./180*pi,
-                absolut_margin=0.1)
+                axes_length=[3, 3],
+                center_position=[1, 0],
+                orientation=0./180*pi,
+                absolut_margin=0.0)
 
             obs.append(cuboid_obs)
 
-            cuboid_obs = Cuboid(
-                axes_length=[3, 1.3],
-                center_position=[0, 2],
-                orientation=-40./180*pi,
-                absolut_margin=0.1)
-            obs.append(cuboid_obs)
-
-                
-
+            # cuboid_obs = Cuboid(
+                # axes_length=[3, 1.3],
+                # center_position=[0, 2],
+                # orientation=-40./180*pi,
+                # absolut_margin=0.1)
+            # obs.append(cuboid_obs)
+            
             # obs[0].set_reference_point([0.3, 3], in_global_frame=False)o
 
             # Simulation_vectorFields(x_lim, y_lim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCube', noTicks=False, figureSize=(6.,5))
 
-            n_points = 10
+            n_points = 12
             points_init = np.vstack((np.ones(n_points)*x_lim[1], np.linspace(y_lim[0], y_lim[1], n_points)))
+            points_attr1 = points_init[:, :int(n_points/2)]
+            points_attr2 = points_init[:, int(n_points/2):]
+
+            xAttractor1 = [1., 1.5]
+            xAttractor2 = [1., -1.5]
             
             points_init = points_init[:, 1:-1]
-            Simulation_vectorFields(x_lim, y_lim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCube', noTicks=False, draw_vectorField=False, points_init=points_init, automatic_reference_point=False)
+            fig_mod, ax_mod = Simulation_vectorFields(x_lim, y_lim, N_resol, obs, xAttractor=xAttractor1, saveFigure=saveFigures, figName='linearSystem_avoidanceCube', noTicks=False, draw_vectorField=False, points_init=points_attr2, automatic_reference_point=False)
+
+            plot_streamlines(points_attr1, ax_mod, obs=obs, attractorPos=xAttractor2)
+            ax_mod.plot(xAttractor2[0],xAttractor2[1], 'k*',linewidth=18.0, markersize=18)
+
+            figName = "dual_attracor_box_nonSmooth"
+            plt.savefig('../figures/' + figName + '.eps', bbox_inches='tight')
+            
 
         if option==-3:
-
             x_lim = [-6,4.1]
             y_lim = [-2,8]
 
@@ -347,7 +370,6 @@ def main(options=[0], N_resol=100, saveFigures=False):
         if option==5:
             # TOOD -- radial displacement algorithm
             # Obstacles being overlapping an being perpendicular or parallel to flow 
-
             xlim = [-1,4]
             ylim = [-2,2]
 
@@ -482,7 +504,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
     
 
-if __name__ == ("__main__"):
+if __name__==("__main__"):
     if len(sys.argv) > 1:
         options = sys.argv[1]
 

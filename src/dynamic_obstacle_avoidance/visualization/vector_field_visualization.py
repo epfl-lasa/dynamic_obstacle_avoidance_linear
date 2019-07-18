@@ -5,6 +5,7 @@ Obstacle Avoidance Algorithm script with vecotr field
 @date 2018-02-15
 '''
 
+
 # General classes
 import numpy as np
 from numpy import pi
@@ -19,6 +20,7 @@ from dynamic_obstacle_avoidance.obstacle_avoidance.linear_modulations import *
 from dynamic_obstacle_avoidance.obstacle_avoidance.obs_common_section import *
 from dynamic_obstacle_avoidance.obstacle_avoidance.obs_dynamic_center_3d import *
 
+
 def pltLines(pos0, pos1, xlim=[-100,100], ylim=[-100,100]):
     if pos1[0]-pos0[0]: # m < infty
         m = (pos1[1] - pos0[1])/(pos1[0]-pos0[0])
@@ -29,11 +31,11 @@ def pltLines(pos0, pos1, xlim=[-100,100], ylim=[-100,100]):
     else:
         xlim = [pos1[0], pos1[0]]
     
-    plt.plot(xlim, ylim, '--', color=[0.3,0.3,0.3], linewidth=2)
+    plt.plot(xlim, ylim, '--', color=[0.3, 0.3, 0.3], linewidth=2)
 
 
 def plot_streamlines(points_init, ax, obs=[], attractorPos=[0,0],
-                     dim=2, dt=0.01, max_simu_step=200, convergence_margin=0.03):
+                     dim=2, dt=0.01, max_simu_step=300, convergence_margin=0.03):
     
     n_points = np.array(points_init).shape[1]
 
@@ -60,11 +62,10 @@ def plot_streamlines(points_init, ax, obs=[], attractorPos=[0,0],
         ax.plot(x_pos[0, :, j], x_pos[1, :, j], '--', lineWidth=4)
         ax.plot(x_pos[0, 0, j], x_pos[1, 0, j], 'k*', markeredgewidth=4, markersize=13)
         
-
     # return x_pos
 
+    
 def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[], sysDyn_init=False, xAttractor = np.array(([0,0])), saveFigure=False, figName='default', noTicks=True, showLabel=True, figureSize=(12.,9.5), obs_avoidance_func=obs_avoidance_interpolation_moving, attractingRegion=False, drawVelArrow=False, colorCode=False, streamColor=[0.05,0.05,0.7], obstacleColor=[], plotObstacle=True, plotStream=True, figHandle=[], alphaVal=1, dynamicalSystem=linearAttractor, draw_vectorField=True, points_init=[], show_obstacle_number=False, automatic_reference_point=True):
-
     dim = 2
 
     # Numerical hull of ellipsoid 
@@ -105,9 +106,9 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
             plt.gca().add_patch(obs_polygon[n])
 
             if show_obstacle_number:
-                ax_ifd.annotate('{}'.format(n+1), xy=np.array(obs[n].x0)+0.16, textcoords='data', size=16, weight="bold")
+                ax_ifd.annotate('{}'.format(n+1), xy=np.array(obs[n].center_position)+0.16, textcoords='data', size=16, weight="bold")
             
-            ax_ifd.plot(obs[n].x0[0], obs[n].x0[1], 'k.')
+            ax_ifd.plot(obs[n].center_position[0], obs[n].center_position[1], 'k.')
             
             # automatic adaptation of center
             reference_point = obs[n].get_reference_point(in_global_frame=True)
@@ -118,7 +119,7 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
             if drawVelArrow and np.linalg.norm(obs[n].xd)>0:
                 col=[0.5,0,0.9]
                 fac=5 # scaling factor of velocity
-                ax_ifd.arrow(obs[n].x0[0], obs[n].x0[1], obs[n].xd[0]/fac, obs[n].xd[1]/fac, head_width=0.3, head_length=0.3, linewidth=10, fc=col, ec=col, alpha=1)
+                ax_ifd.arrow(obs[n].center_position[0], obs[n].center_position[1], obs[n].xd[0]/fac, obs[n].xd[1]/fac, head_width=0.3, head_length=0.3, linewidth=10, fc=col, ec=col, alpha=1)
 
     plt.gca().set_aspect('equal', adjustable='box')
 
@@ -144,7 +145,8 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
     if not draw_vectorField:
         plt.ion()
         plt.show()
-        return
+        return fig_ifd, ax_ifd
+        # return
 
     start_time = time.time()
 
@@ -165,8 +167,8 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
     it_start = 0
     n_samples = 0
     
-    pos1 = [-0.5, 3.18] 
-    pos2 = [-0.25, 3.18]
+    pos1 = [8.8, -2.0]
+    pos2 = [9.0, -2.0]
 
     x_sample_range = [pos1[0], pos2[0]]
     y_sample_range = [pos1[1], pos2[1]]

@@ -36,7 +36,7 @@ def linearAttractor_const(x, x0 = 'default', velConst=0.3, distSlow=0.01):
     dx = min(velConst, 1/dx_mag*velConst)*dx
 
     return dx
-
+        
 
 def nonlinear_wavy_DS(x, x0=[0,0]):
     xd = np.zeros((np.array(x).shape))
@@ -90,22 +90,30 @@ def constVel(xd, const_vel=2.0):
     return xd/xd_norm*const_vel
 
 
-def linearDS_constVel(x, x_attr=[], const_vel=2.0):
+def linearDS_constVel(x, x_attr=None, const_vel=2.0, A=None, x0=None):
     dim = np.array(x).shape[0]
-
+    
     x_shape = x.shape
     x = np.squeeze(x.reshape(dim, 1,-1))
     
-    if not np.array(x_attr).shape[0]:
-        x_attr = np.zeros(dim) 
+    if type(x_attr)==type(None):
+        if type(x0) == type(None):
+            x_attr = np.zeros(dim)
+        else:
+            x_attr = x0
     
     if len(x.shape)==1: # in case of 1D input array
-        x = np.tile(x, (1,1)).T 
-        
+        x = np.tile(x, (1,1)).T
+
     xd = -(x - np.tile(x_attr, (x.shape[1], 1)).T)
+
+    if type(A)!=type(None):
+        # Higher dimensional matrix multiplication
+        xd = A.dot(xd) 
     
     xd_norm = LA.norm(xd,axis=0)
         
     xd[:, xd_norm>0] = xd[:, xd_norm>0]/np.tile(xd_norm[xd_norm>0], (dim,1))*const_vel
     
     return xd.reshape(x_shape)
+

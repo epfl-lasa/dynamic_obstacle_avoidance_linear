@@ -76,7 +76,7 @@ def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPo
             R[:,:,n] = np.eye(d)
 
         # Move to obstacle centered frame
-        x_t = R[:,:,n].T @ (x-obs[n].x0)
+        x_t = R[:,:,n].T @ (x-obs[n].center_position)
         E[:,:,n], D[:,:,n], Gamma[n], E_orth[:,:,n] = compute_modulation_matrix(x_t, obs[n], R[:,:,n])
         
     if N_attr:
@@ -91,10 +91,10 @@ def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPo
     for n in range(N_obs):
         if d==2:
             xd_w = np.cross(np.hstack(([0,0], obs[n].w)),
-                            np.hstack((x-np.array(obs[n].x0),0)))
+                            np.hstack((x-np.array(obs[n].center_position),0)))
             xd_w = xd_w[0:2]
         elif d==3:
-            xd_w = np.cross( obs[n].w, x-obs[n].x0 )
+            xd_w = np.cross( obs[n].w, x-obs[n].center_position )
         else:
             warnings.warn('NOT implemented for d={}'.format(d))
 
@@ -129,7 +129,6 @@ def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPo
         
     for n in range(N_obs):
         # xd_R = LA.pinv(E[:,:,n]) @ R[:,:,n].T @ xd
-        # import pdb; pdb.set_trace() ## DEBUG ##
         
         M[:,:,n] = R[:,:,n] @ E[:,:,n] @ D[:,:,n] @ LA.pinv(E[:,:,n]) @ R[:,:,n].T
         
@@ -225,20 +224,9 @@ def compute_modulation_matrix(x_t, obs, R, matrix_singularity_margin=pi/2.0*1.05
         rho = 1
 
     Gamma = obs.get_gamma(x_t, in_global_frame=False) # function for ellipsoids
-
-    # reference_direction
-    # array([0.99979922, 0.02003783])
-
-    # x_t
-    # array([-2.33109637,  1.01576377])
-
-    # th_r
-    # 0.6981317007977318
     
     normal_vector = obs.get_normal_direction(x_t, in_global_frame=False)
     reference_direction = obs.get_reference_direction(x_t, in_global_frame=False)
-    
-    
 
     # Check if there was correct placement of reference point
     Gamma_referencePoint = obs.get_gamma(obs.reference_point)
@@ -291,9 +279,6 @@ def compute_modulation_matrix(x_t, obs, R, matrix_singularity_margin=pi/2.0*1.05
     eigenvalue_reference, eigenvalue_tangent = calculate_eigenvalues(Gamma)
     D = np.diag(np.hstack((eigenvalue_reference, np.ones(dim-1)*eigenvalue_tangent)))
 
-    # print('norm ref prod', reference_direction.T@normal_vector)
-    # import pdb; pdb.set_trace() ## DEBUG ##
-    
     return E, D, Gamma, E_orth
 
 

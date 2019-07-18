@@ -81,8 +81,6 @@ def obs_common_section(obs):
     # No intersection region 
     if N_obs <= 1:
         return []
-    import pdb; pdb.set_trace() ## DEBUG ##
-    
 
     # Intersction surface
     intersection_obs = []
