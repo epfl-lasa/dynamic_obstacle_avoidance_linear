@@ -230,8 +230,10 @@ def compute_modulation_matrix(x_t, obs, R, matrix_singularity_margin=pi/2.0*1.05
 
     # Check if there was correct placement of reference point
     Gamma_referencePoint = obs.get_gamma(obs.reference_point)
-    if Gamma_referencePoint >= 1:
-                
+    
+    if not obs.is_boundary and Gamma_referencePoint >= 1:
+        # Check what this does...
+        
         # surface_position = obs.get_obstace_radius* x_t/LA.norm(x_t)
         # direction_surface2reference = obs.get_reference_point()-surface_position
 
@@ -260,13 +262,15 @@ def compute_modulation_matrix(x_t, obs, R, matrix_singularity_margin=pi/2.0*1.05
     E_orth = np.zeros((dim, dim))
     
     # Create orthogonal basis matrix        
-    E_orth[:,0] = normal_vector# Basis matrix
+    E_orth[:, 0] = normal_vector# Basis matrix
 
     for ii in range(1,dim):
 
         if dim ==2:
             E_orth[0, 1] = E_orth[1, 0]
             E_orth[1, 1] = - E_orth[0, 0]
+        else:
+            warnings.warn('Implement higher dimensions for E')
             
         # TODO higher dimensions
         # E[:dim-(ii), ii] = normal_vector[:dim-(ii)]*normal_vector[dim-(ii)]
@@ -274,22 +278,32 @@ def compute_modulation_matrix(x_t, obs, R, matrix_singularity_margin=pi/2.0*1.05
         # E_orth[:, ii] = E_orth[:, ii]/LA.norm(E_orth[:, ii])
 
     E = np.copy((E_orth))
-    E[:,0] = -reference_direction
-
-    eigenvalue_reference, eigenvalue_tangent = calculate_eigenvalues(Gamma)
+    E[:, 0] = -reference_direction
+    
+    eigenvalue_reference, eigenvalue_tangent = calculate_eigenvalues(Gamma,
+                                                                     is_boundary=obs.is_boundary)
     D = np.diag(np.hstack((eigenvalue_reference, np.ones(dim-1)*eigenvalue_tangent)))
 
     return E, D, Gamma, E_orth
 
 
-def calculate_eigenvalues(Gamma, rho=1):
+def calculate_eigenvalues(Gamma, rho=1, is_boundary=False):
     if Gamma<=1:# point inside the obstacle
         delta_eigenvalue = 1 
     else:
         delta_eigenvalue = 1./abs(Gamma)**(1/rho)
-    
+
     eigenvalue_reference = 1 - delta_eigenvalue
-    eigenvalue_tangent = 1 + delta_eigenvalue
+    # eigenvalue_reference = 0.1
+    
+    if is_boundary:
+        eigenvalue_tangent = 1
+    else:
+        eigenvalue_tangent = 1 + delta_eigenvalue            
+
+    # print('eig vals r={}, tang={}'.format(eigenvalue_reference, eigenvalue_tangent))
+    # import pdb; pdb.set_trace() ## DEBUG ##
+    
     return eigenvalue_reference, eigenvalue_tangent
 
 

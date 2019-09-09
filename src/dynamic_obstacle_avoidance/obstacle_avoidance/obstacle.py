@@ -125,7 +125,7 @@ class Obstacle:
             self.axes_length = np.array(a)
         else:
             self.axes_length = axes_length
-            self.axes = np.array(a)
+            self.axes = np.array(axes_length)
             self.a = axes_length
 
         self.margin_axes =  self.axes*np.array(sf)+np.array(delta_margin)
@@ -329,8 +329,7 @@ class Obstacle:
 
         if not self.reference_point_is_inside:
             for ii in np.arange(self.tangent_points.shape[1]):
-                reference_line = {"point_start":[0,0],
-                                  "point_end":position}
+                reference_line = {"point_start":[0,0], "point_end":position}
                 
                 # TODO - don't use reference point, but little 'offset' to avoid singularity
                 tangent_line = {"point_start":self.hull_edge,
@@ -343,13 +342,17 @@ class Obstacle:
         # Original Gamma
         Gamma = np.sum((position/self.margin_axes)**(2*self.p)) # distance
         
-        # if self.is_boundary:
-            # if Gamma <= Gamma_ref:
-                # Gamma = sys.float_info.max
-            # else:
-                # Gamma = (1-self.Gamma_ref)/(Gamma-self.Gamma_ref)
-
+        if self.is_boundary:
+            Gamma = self.get_boundaryGamma(Gamma,Gamma_ref=self.Gamma_ref)
+        # print('Gamma', Gamma)
         return Gamma
+
+    def get_boundaryGamma(self, Gamma, Gamma_ref=0):
+        if Gamma <= Gamma_ref:
+            return sys.float_info.max
+        else:
+            return (1-Gamma_ref)/(Gamma-Gamma_ref)
+        
 
     def get_distance_to_hullEdge(self, position):
         n_planes = self.normal_vector.shape[1]
@@ -417,8 +420,18 @@ class Obstacle:
         if weight_norm:
             return weights/weight_norm
         return weights
-        
 
+    
+    def get_distance_weight(self, distance, power=1):
+        ind_positiveDistance = (distance>0)
+
+        weights = np.zeros(distance.shape)
+        weights[ind_positiveDistance] = (1./distance[ind_positiveDistance])**power
+        weights[ind_positiveDistance] /= np.sum(weights[ind_positiveDistance])
+        # weights[~ind_positiveDistance] = 0
+
+        return weights
+        
     def get_normal_direction(self, position, in_global_frame=False, normalize=True):
         
         if in_global_frame:
@@ -644,7 +657,7 @@ class Ellipse(Obstacle):
 
 
 class Cuboid(Obstacle):
-    def __init__(self,  orientation=0, sf=1, absolut_margin=0, xd=[0,0], sigma=1,  w=0, x_start=0, x_end=0, timeVariant=False, axes_length=[1,1], a=None, center_position=[0,0],  tail_effect=True, always_moving=True, *args, **kwargs):
+    def __init__(self,  orientation=0, sf=1, absolut_margin=0, xd=[0,0], sigma=1,  w=0, x_start=0, x_end=0, timeVariant=False, axes_length=[1,1], a=None, center_position=[0,0],  tail_effect=True, always_moving=True, is_boundary=False, *args, **kwargs):
         # This class defines obstacles to modulate the DS around it
         # At current stage the function focuses on Ellipsoids, but can be extended to more general obstacles
     # def __init_pose__():
@@ -738,6 +751,8 @@ class Cuboid(Obstacle):
 
         self.reference_point_is_inside = True
 
+        self.is_boundary = is_boundary
+
     # def draw_obstacle(self, draw_obstacleMargin=True, n_points=4):
         # for ii
 
@@ -784,11 +799,39 @@ class Cuboid(Obstacle):
         if in_global_frame:
             position = self.transform_global2relative(position)
 
-        distances2plane = self.get_distance_to_hullEdge(position)
-        ind_outside = (distances2plane > 0)
-        delta_Gamma = (LA.norm(distances2plane[ind_outside], ord=norm_order)-self.absolut_margin)
+        
 
-        return 1 + delta_Gamma / np.max(self.axes_length)
+        # TODO extend rule to include points with Gamma < 1 for both cases
+        if self.is_boundary:
+            dist2hull = np.ones(self.edge_points.shape[1])*(-1)
+
+            mag_position = LA.norm(position)
+            if mag_position==0: # aligned with center, treat sepearately
+                return  # 
+                
+            reference_dir = position / mag_position
+            
+            for ii in range(self.edge_points.shape[1]):
+                surface_dir = (self.edge_points[:, (ii+1)%self.edge_points.shape[1]]
+                               - self.edge_points[:, ii])
+
+                # vec_tan*a + edge_point = r*b + 0
+                # [position vec_tan] [b -a] = edge_point
+                
+                dist2hull[ii] = LA.lstsq(np.vstack((reference_dir, surface_dir)).T, self.edge_points[:, ii], rcond=None)[0][0]
+
+            Gamma = np.min(dist2hull[dist2hull>0])/mag_position
+            
+        else:
+            distances2plane = self.get_distance_to_hullEdge(position)
+            
+            delta_Gamma = np.min(distances2plane) - self.absolut_margin
+            ind_outside = (distances2plane > 0)
+            delta_Gamma = (LA.norm(distances2plane[ind_outside], ord=norm_order)-self.absolut_margin)
+            Gamma = 1 + delta_Gamma / np.max(self.axes_length)
+            
+
+        return Gamma
         
         # for ii in np.arange(self.edge_points.shape[1]):
         #     reference_line = {"point_start":[0,0],
@@ -817,45 +860,67 @@ class Cuboid(Obstacle):
         ind_intersect = np.zeros(self.normalDistance2center.shape, dtype=bool)
 
         distances2plane = self.get_distance_to_hullEdge(position)
-        ind_outside = (distances2plane > 0)
-        if not np.sum(ind_outside): # zero value
-            return np.ones(self.dim)/self.dim # Nonsingular value
-            
         # if np.sum(ind_outside)>0:
         # tangent_line = np.zeros(self.normal_vector.shape)
         # position_line = np.zeros(self.normal_vector.shape)
+        ind_outside = (distances2plane > 0)
 
-        angle2hull = np.zeros(ind_outside.shape)
-        for ii in range(self.edge_points.shape[1]):
-            if distances2plane[ii] <= 0 or not ind_outside[ii]:
-                angle2hull[ii] = pi
-                continue
-            
-            # TODO - don't use reference point, but little 'offset' to avoid singularity
-            # Get closest point
-            edge_points_temp = np.vstack((self.edge_points[:,ii],
-                                     self.edge_points[:,(ii+1)%self.edge_points.shape[1]])).T
-            ind_sort = np.argsort(LA.norm(np.tile(position,(2,1)).T-edge_points_temp, axis=0))
-            
-            # tangent_line[:,ii] = edge_points_temp[ind_sort[1]] - edge_points_temp[ind_sort[0]]
-            # position_line[:,ii] = position - edge_points_temp[ind_sort[0]]
-            
-            tangent_line = edge_points_temp[:,ind_sort[1]] - edge_points_temp[:, ind_sort[0]]
-            position_line = position - edge_points_temp[:, ind_sort[0]]
-        
-            angle2hull[ii] = self.get_angle2dir(position_line, tangent_line)
+        if self.is_boundary and np.sum(ind_outside)==0:
+            dist2hull = np.ones(self.edge_points.shape[1])*(-1)
 
-        if not np.sum(ind_intersect): # nonzero
-            # warnings.warn("No intersection found.")
-            normal_vector = np.ones(self.dim)
+            mag_position = LA.norm(position)
+            if mag_position==0: # aligned with center, treat sepearately
+                return np.hstack((1, np.zeros(self.dim-1)))
+                # return None
+                
+            reference_dir = position / mag_position
             
-        weights = self.get_angle_weight(angle2hull)
+            for ii in range(self.edge_points.shape[1]):
+                # TODO - try to optimze
+                surface_dir = (self.edge_points[:, (ii+1)%self.edge_points.shape[1]]
+                               - self.edge_points[:, ii]) 
+
+                # vec_tan*a + edge_point = r*b + 0
+                # [position vec_tan] [b -a] = edge_point
+                dist2hull[ii] = LA.lstsq(np.vstack((reference_dir, surface_dir)).T, self.edge_points[:, ii], rcond=None)[0][0]
+
+            weights = self.get_distance_weight(dist2hull-mag_position)
+            
+        else:
+            if not np.sum(ind_outside): # zero value
+                # TODO solver better
+                return np.ones(self.dim)/self.dim # Nonsingular value
+
+            angle2hull = np.zeros(ind_outside.shape)
+            for ii in range(self.edge_points.shape[1]):
+                if distances2plane[ii] <= 0 or not ind_outside[ii]:
+                    angle2hull[ii] = pi
+                    continue
+
+                # TODO - don't use reference point, but little 'offset' to avoid singularity
+                # Get closest point
+                edge_points_temp = np.vstack((self.edge_points[:,ii],
+                                         self.edge_points[:,(ii+1)%self.edge_points.shape[1]])).T
+                ind_sort = np.argsort(LA.norm(np.tile(position,(2,1)).T-edge_points_temp, axis=0))
+
+                # tangent_line[:,ii] = edge_points_temp[ind_sort[1]] - edge_points_temp[ind_sort[0]]
+                # position_line[:,ii] = position - edge_points_temp[ind_sort[0]]
+
+                tangent_line = edge_points_temp[:,ind_sort[1]] - edge_points_temp[:, ind_sort[0]]
+                position_line = position - edge_points_temp[:, ind_sort[0]]
+
+                angle2hull[ii] = self.get_angle2dir(position_line, tangent_line)
+
+            if not np.sum(ind_intersect): # nonzero
+                # warnings.warn("No intersection found.")
+                normal_vector = np.ones(self.dim)
+            
+            weights = self.get_angle_weight(angle2hull)
 
         normal_vector = get_directional_weighted_sum(reference_direction=position, directions=self.normal_vector, weights=weights, normalize=False, obs=self, position=position, normalize_reference=True)
-
         if normalize:
             normal_vector = normal_vector/LA.norm(normal_vector)
-
+        
         if False:
             # self.draw_reference_hull(normal_vector, position)
             pos_abs = self.transform_relative2global(position)
@@ -864,6 +929,9 @@ class Cuboid(Obstacle):
             ref_abs = self.get_reference_direction(position)
             ref_abs = self.transform_relative2global_dir(ref_abs)
             plt.quiver(pos_abs[0], pos_abs[1], ref_abs[0], ref_abs[1], color='k')
-        
-        return normal_vector
 
+            plt.ion()
+            plt.show()
+            
+            
+        return normal_vector

@@ -87,23 +87,59 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
         obs_polygon = []
         obs_polygon_sf = []
 
+        obs_hole = []
+
         for n in range(len(obs)):
             x_obs_sf = obs[n].x_obs_sf # todo include in obs_draw_ellipsoid
             
             plt.plot([x_obs_sf[i][0] for i in range(len(x_obs_sf))],
                 [x_obs_sf[i][1] for i in range(len(x_obs_sf))], 'k--')
+            
+                # obs_polygon.append(
+                    # plt.Polygon( 
+                        # np.vstack((
+                            # np.array([[x_range[0], x_range[1],x_range[1], x_range[0]],
+                                      # [y_range[0], y_range[0],y_range[1], y_range[1]]]).T,
+                        # obs[n].x_obs)), zorder=2, alpha=0.5))
 
-            obs_polygon.append( plt.Polygon(obs[n].x_obs, zorder=2, alpha=0.5))            
-            if len(obstacleColor)==len(obs):
-                obs_polygon[n].set_color(obstacleColor[n])
+                # obs_polygon.append(
+                    # plt.Polygon( 
+                        # np.vstack((
+                            # np.array([[x_range[0], x_range[1],x_range[1], x_range[0]],
+                                      # [y_range[0], y_range[0],y_range[1], y_range[1]]]).T
+                        # )), zorder=2, alpha=0.5))
+                # obs_hole.append(plt.Polygon(obs[n].x_obs, zorder=2, alpha=0.5))
+
+            # obs_polygon.append( plt.Polygon(obs[n].x_obs, zorder=2, alpha=0.5))
+            obs_polygon.append( plt.Polygon(obs[n].x_obs, alpha=0.5, zorder=1))
+
+            if obs[n].is_boundary:
+                boundary_polygon = plt.Polygon( 
+                    np.vstack((
+                        np.array([[x_range[0], x_range[1],x_range[1], x_range[0]],
+                                  [y_range[0], y_range[0],y_range[1], y_range[1]]]).T
+                    )), alpha=0.5, zorder=-1)
+                boundary_polygon.set_color(np.array([176,124,124])/255)
+                                
+                obs_polygon[n].set_color('white')
+                obs_polygon[n].set_alpha(1)
+                obs_polygon[n].set_zorder(-1)
+                
             else:
-                obs_polygon[n].set_color(np.array([176,124,124])/255)
-
+                if len(obstacleColor)==len(obs):
+                    obs_polygon[n].set_color(obstacleColor[n])
+                else:
+                    obs_polygon[n].set_color(np.array([176,124,124])/255)
+            
             obs_polygon_sf.append( plt.Polygon(obs[n].x_obs_sf, zorder=1, alpha=0.2))
             obs_polygon_sf[n].set_color([1,1,1])
-            
+
+            if obs[n].is_boundary:
+                plt.gca().add_patch(boundary_polygon)
+
             plt.gca().add_patch(obs_polygon_sf[n])
             plt.gca().add_patch(obs_polygon[n])
+            
 
             if show_obstacle_number:
                 ax_ifd.annotate('{}'.format(n+1), xy=np.array(obs[n].center_position)+0.16, textcoords='data', size=16, weight="bold")
@@ -159,7 +195,8 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
         N_x = N_y = 1
         XX, YY = np.array([[point_grid[0]]]), np.array([[point_grid[1]]])
 
-    # REMOVE after testing
+    # Only for testing after testing
+    ########## START REMOVE ##########
     # N_x = N_y = 1
     # XX = np.zeros((N_x, N_y))
     # YY = np.zeros((N_x, N_y))
@@ -167,8 +204,8 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
     it_start = 0
     n_samples = 0
     
-    pos1 = [8.8, -2.0]
-    pos2 = [9.0, -2.0]
+    pos1 = [-3.9, 4.7]
+    pos2 = [-3.0, 4.7]
 
     x_sample_range = [pos1[0], pos2[0]]
     y_sample_range = [pos1[1], pos2[1]]
@@ -183,6 +220,8 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
         
         XX[ix, iy] = x_sample[ii]
         YY[ix, iy] = y_sample[ii]
+
+    ########## STOP REMOVE ###########
 
 
     if attractingRegion: # Forced to attracting Region
@@ -199,10 +238,9 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
     for ix in range(N_x):
         for iy in range(N_y):
             pos = np.array([XX[ix,iy],YY[ix,iy]])
+
             xd_init[:,ix,iy] = dynamicalSystem(pos, x0=xAttractor) # initial DS
-                
             xd_mod[:,ix,iy] = obs_avoidance(pos, xd_init[:,ix,iy], obs) # modulataed DS with IFD
-    
 
     if sysDyn_init:
         fig_init, ax_init = plt.subplots(figsize=(5,2.5))
@@ -213,10 +251,9 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
 
         plt.xlim(x_range)
         plt.ylim(y_range)
-        
 
     indOfnoCollision = obs_check_collision_2d(obs, XX, YY)
-
+        
     dx1_noColl = np.squeeze(xd_mod[0,:,:]) * indOfnoCollision
     dx2_noColl = np.squeeze(xd_mod[1,:,:]) * indOfnoCollision
 

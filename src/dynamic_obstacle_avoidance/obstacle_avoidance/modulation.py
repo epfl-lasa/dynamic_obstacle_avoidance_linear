@@ -220,7 +220,7 @@ def obs_check_collision_2d(obs_list, XX, YY):
 
     N_points = points.shape[1]
 
-    noColl = np.ones((1,N_points))
+    noColl = np.ones((1,N_points), dtype=bool)
 
     for it_obs in range(len(obs_list)):
         # on the surface, we have: \Gamma = \sum_{i=1}^d (xt_i/a_i)^(2p_i) == 1
@@ -231,7 +231,7 @@ def obs_check_collision_2d(obs_list, XX, YY):
         Gamma = np.zeros(N_points)
         for ii in range(N_points):
             Gamma[ii] = obs_list[it_obs].get_gamma(points[:,ii], in_global_frame=True)
-        
+            
         noColl = (noColl* Gamma>1)
 
     return np.reshape(noColl, dim_points)
