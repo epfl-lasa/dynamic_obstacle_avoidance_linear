@@ -164,7 +164,7 @@ def obs_common_section(obs):
                     #                 R = compute_R(d,obs[it_obs2].th_r)
                     Gamma_temp = ( rotMat[:,:,it_obs2].T @ (np.array(obs[it_obs1].x_obs_sf).T-np.tile(obs[it_obs2].x0,(N_points,1)).T ) / np.tile(obs[it_obs2].a, (N_points,1)).T )
                     Gamma = np.sum(( 1/obs[it_obs2].sf *  Gamma_temp)  ** (2*np.tile(obs[it_obs2].p, (N_points,1)).T), axis=0 )
-                    intersection_sf_temp = np.hstack((intersection_sf_temp, np.array(obs[it_obs1].x_vobs_sf)[Gamma<1,:].T ) )
+                    intersection_sf_temp = np.hstack((intersection_sf_temp, np.array(obs[it_obs1].x_obs_sf)[Gamma<1,:].T ) )
 
                     if intersection_sf_temp.shape[1] > 0:
                         it_intersect = it_intersect + 1

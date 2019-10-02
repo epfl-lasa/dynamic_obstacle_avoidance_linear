@@ -552,13 +552,13 @@ class Obstacle:
                         self.th_r = [self.th_r[i]+dt*self.w[i] for i in range(self.d)]  #update orientation/attitude
                     self.compute_R() # Update rotation matrix
                 
-                self.draw_ellipsoid()
+                self.draw_obstacle()
             
 
     def draw_ellipsoid(self, *args, **kwargs):
         # TODO remove
         warnings.warn("<<draw_ellipsoid>> has been renamed <<draw_obstacle>>")
-        abort()
+        self.draw_obstacle(*args, **kwargs)
         # sys.exit(0)
         
     def draw_obstacle(self, numPoints=20, a_temp = [0,0], draw_sfObs = False):
