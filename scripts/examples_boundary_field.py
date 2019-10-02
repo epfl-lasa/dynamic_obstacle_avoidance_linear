@@ -18,11 +18,12 @@ from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
 
 ########################################################################
 # Chose the option you want to run as a number in the option list (integer from -2 to 10)
-options = [1]
+# options = [0, 1, 2]
+options = [0]
 
 N_resol = 100
 
-saveFigures=False
+saveFigures=True
 
 ########################################################################
 
@@ -31,7 +32,7 @@ def main(options=[], N_resol=100, saveFigures=False):
         obs = [] # create empty obstacle list
         if option==0:
             x_lim = [-1.1,8.1]
-            y_lim = [-3.9,6.1]
+            y_lim = [-3.9,6.3]
 
             xAttractor=[1,0]
             
@@ -46,12 +47,14 @@ def main(options=[], N_resol=100, saveFigures=False):
 
             obs.append(Ellipse(axes_length=[0.3, 1.8], center_position=[3, -2.4], p=[1,1], orientation=-70./180*pi, sf=1, is_boundary=False))
                                 
-            fig_mod, ax_mod = Simulation_vectorFields(x_lim, y_lim,  obs=obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_boundaryEllipse', noTicks=False, draw_vectorField=True,  automatic_reference_point=False, point_grid=80)
+            fig_mod, ax_mod = Simulation_vectorFields(x_lim, y_lim,  obs=obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_boundaryCuboid', noTicks=False, draw_vectorField=True,  automatic_reference_point=False, point_grid=N_resol)
+
+            # fig_mod, ax_mod = Simulation_vectorFields(x_lim, y_lim,  obs=[], xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_initial', noTicks=False, draw_vectorField=True,  automatic_reference_point=False, point_grid=N_resol)
             
 
         if option==1:
             x_lim = [-1.1,8.1]
-            y_lim = [-3.9,6.1]
+            y_lim = [-3.9,6.3]
 
             xAttractor=[1,0]
             
@@ -62,7 +65,18 @@ def main(options=[], N_resol=100, saveFigures=False):
                 absolut_margin=0.0,
                 is_boundary=True))
             
-            fig_mod, ax_mod = Simulation_vectorFields(x_lim, y_lim,  obs=obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_boundaryEllipse', noTicks=False, draw_vectorField=True,  automatic_reference_point=False, point_grid=80)
+            # fig_mod, ax_mod = Simulation_vectorFields(x_lim, y_lim,  obs=obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_boundaryCuboid_twoEllipses_quiver', noTicks=False, draw_vectorField=True,  automatic_reference_point=False, point_grid=N_resol)
+            fig_mod, ax_mod = Simulation_vectorFields(x_lim, y_lim,  obs=obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_boundaryCuboid_twoEllipses', noTicks=False, draw_vectorField=True,  automatic_reference_point=False, point_grid=N_resol)
+
+        if option==2:
+            x_lim = [-1.1,8.1]
+            y_lim = [-3.9,6.1]
+
+            xAttractor=[1,0]
+            
+            obs.append(Ellipse(axes_length=[3.5, 4.0], center_position=[4, 2.0], p=[1,1], orientation=-70./180*pi, sf=1, is_boundary=True))
+            
+            fig_mod, ax_mod = Simulation_vectorFields(x_lim, y_lim,  obs=obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_boundaryEllipse', noTicks=False, draw_vectorField=True,  automatic_reference_point=False, point_grid=N_resol)
 
 
             

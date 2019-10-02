@@ -240,7 +240,7 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
             pos = np.array([XX[ix,iy],YY[ix,iy]])
 
             xd_init[:,ix,iy] = dynamicalSystem(pos, x0=xAttractor) # initial DS
-            xd_mod[:,ix,iy] = obs_avoidance(pos, xd_init[:,ix,iy], obs) # modulataed DS with IFD
+            xd_mod[:,ix,iy] = obs_avoidance(pos, xd_init[:,ix,iy], obs) # modulataed DS with IFS
 
     if sysDyn_init:
         fig_init, ax_init = plt.subplots(figsize=(5,2.5))
@@ -283,10 +283,11 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
     plt.ion()
     plt.show()
 
-    returnFigure=True
+    returnFigure=False
     if returnFigure:
         return fig_ifd, ax_ifd
-    
+
     if saveFigure:
-        plt.savefig('fig/' + figName + '.eps', bbox_inches='tight')
+        # plt.savefig('figures/' + figName + '.eps', bbox_inches='tight')
+        plt.savefig('figures/' + figName + '.png', bbox_inches='tight')
         return fig_ifd, ax_ifd
