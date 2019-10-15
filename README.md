@@ -25,8 +25,8 @@ To execute an interactive script online click here:
 ## Quick start
 Several examples of the obstacle avoidance algorithm have been ipmlemented. The highly reactive nature of the algorithm allows it to be used to avoid crowded environment with fastly chaning movement of humans. 
 <p align="center">
-<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/blob/wheelchairObstacles.png"  width="350"></>
-  <img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/blob/wheelchairSimulation.png"  width="350"></>
+<img src="https://raw.githubusercontent.com/hubernikus/dynamic_obstacle_avoidance_linear/master/blob/wheelchairObstacles.png"  width="350"></>
+  <img src="https://raw.githubusercontent.com/hubernikus/dynamic_obstacle_avoidance_linear/master/blob/wheelchairSimulation.png"  width="350"></>
 
 ### Vector fields
 Different examples of the vector field simulation can be launched by running the script
@@ -40,8 +40,8 @@ Custom vector fields can be created using by calling the class
 Simulation_vectorFields() [$ lib_visalization/vectorField_visualization.py]
 ```
 <p align="center">
-<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_python/master/blob/linearCombination_obstaclesBoth.png"  height="200"></>
-<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_python/master/blob/three_obstacles_touching.png"  height="200"></>
+<img src="https://raw.githubusercontent.com/hubernikus/dynamic_obstacle_avoidance_python/master/blob/linearCombination_obstaclesBoth.png"  height="200"></>
+<img src="https://raw.githubusercontent.com/hubernikus/dynamic_obstacle_avoidance_python/master/blob/three_obstacles_touching.png"  height="200"></>
 
 ### Animated visualization
 Different animated examples with static and non-static obstacles can be found in:
@@ -56,7 +56,7 @@ run_animation() [$ lib_visalization/animated_simulation.py]
 ```
 
 <p align="center">
-<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_python/master/blob/rotatingEllipse.gif"  height="500"></>
+<img src="https://raw.githubusercontent.com/hubernikus/dynamic_obstacle_avoidance_python/master/blob/rotatingEllipse.gif"  height="500"></>
 
 ## Obstacle Class
 For each obstacle of an ellipsoid form, a class instanse of "lib_obstacleAvoidance/obstacle_class.py" has to be defined. This desires several paramters such as center position x0, axis length a, surface curvature p, orientation th_r.
@@ -89,9 +89,9 @@ Helping functions are defined in the "lib_obstacleAvoidance/linear_modulations.p
 ### Reference Point
 At the heart of the present obstacle avoidance algorithm lies the correct placement of the reference point within the obstacle. It ensures convergence towards the attractor and defines the split of the DS.
 <p align="center">
-<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_python/master/blob/ellipse_localMinima_colMap.png"  height="200">
-<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_python/master/blob/ellipseCenterMiddle_centerLine_pres_colMap.png"  height="200">
-<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_python/master/blob/ellipseCenterNotMiddle_centerLine_pres_colMap.png"  height="200"></>
+<img src="https://raw.githubusercontent.com/hubernikus/dynamic_obstacle_avoidance_python/master/blob/ellipse_localMinima_colMap.png"  height="200">
+<img src="https://raw.githubusercontent.com/hubernikus/dynamic_obstacle_avoidance_python/master/blob/ellipseCenterMiddle_centerLine_pres_colMap.png"  height="200">
+<img src="https://raw.githubusercontent.com/hubernikus/dynamic_obstacle_avoidance_python/master/blob/ellipseCenterNotMiddle_centerLine_pres_colMap.png"  height="200"></>
 
 Automatic and dynamic placement of the reference point is done with the functions of the dynamic center are applied with "lib_obstacleAvoidance/obs_common_section.py" and "lib_obstacleAvoidance/obs_dynamic_center_3d.py".
 <img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_python/master/blob/replication_humans.gif"  height="500"></>
