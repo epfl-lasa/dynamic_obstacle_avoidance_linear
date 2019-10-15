@@ -6,7 +6,7 @@ Requirements: conda, jupyter notebook, python.
 
 To setup got to your install/code directory, and type:
 ```
-git clone https://github.com/hubernikus/dynamic_obstacle_avoidance_python
+git clone https://github.com/epfl-lasa/dynamic_obstacle_avoidance_linear
 conda env create -f environment.yml
 conda activate obstacle_avoidance_linear
 python setup.py install
@@ -25,8 +25,8 @@ To execute an interactive script online click here:
 ## Quick start
 Several examples of the obstacle avoidance algorithm have been ipmlemented. The highly reactive nature of the algorithm allows it to be used to avoid crowded environment with fastly chaning movement of humans. 
 <p align="center">
-<img src="https://raw.githubusercontent.com/hubernikus/dynamic_obstacle_avoidance_linear/master/blob/wheelchairObstacles.png"  width="350"></>
-  <img src="https://raw.githubusercontent.com/hubernikus/dynamic_obstacle_avoidance_linear/master/blob/wheelchairSimulation.png"  width="350"></>
+<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/blob/wheelchairObstacles.png"  width="350"></>
+  <img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/blob/wheelchairSimulation.png"  width="350"></>
 
 ### Vector fields
 Different examples of the vector field simulation can be launched by running the script
@@ -40,8 +40,8 @@ Custom vector fields can be created using by calling the class
 Simulation_vectorFields() [$ lib_visalization/vectorField_visualization.py]
 ```
 <p align="center">
-<img src="https://raw.githubusercontent.com/hubernikus/dynamic_obstacle_avoidance_python/master/blob/linearCombination_obstaclesBoth.png"  height="200"></>
-<img src="https://raw.githubusercontent.com/hubernikus/dynamic_obstacle_avoidance_python/master/blob/three_obstacles_touching.png"  height="200"></>
+<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/blob/linearCombination_obstaclesBoth.png"  height="200"></>
+<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/blob/three_obstacles_touching.png"  height="200"></>
 
 ### Animated visualization
 Different animated examples with static and non-static obstacles can be found in:
