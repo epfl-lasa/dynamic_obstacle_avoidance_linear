@@ -186,9 +186,49 @@ class Obstacle:
 
         self.Gamma_ref = Gamma_ref
         self.is_boundary = is_boundary
+        
+    @property
+    def center_dyn(self):
+        return self.reference_point
 
-    # def update_reference(self, new_ref):
-        # TODo write function
+    @center_dyn.setter
+    def center_dyn(self, value):
+        self.reference_point = value
+
+    # @property
+    # def global_reference_point(self):
+        # return self.reference_point
+    
+    # @property
+    # def local_reference_point(self):
+        # return self.rotMatrix.dot(self.reference_point) - self.center_position
+        
+    @property
+    def x0(self):
+        return self.center_position
+        
+    @x0.setter
+    def x0(self, value):
+        # print('reset center dyn')
+        self.center_position = value
+
+    @property
+    def w(self):
+        return self.orientation
+        
+    @w.setter
+    def w(self, value):
+        self.orientation = value
+        
+    @property
+    def a(self):
+        return self.axes_length
+        
+    @a.setter
+    def a(self, value):
+        self.axes_length = value
+
+    
     
     def transform_global2relative(self, position=None, direction=None): # Inherit
             return self.rotMatrix.T .dot(position - np.array(self.center_position))
@@ -558,7 +598,7 @@ class Obstacle:
     def draw_ellipsoid(self, *args, **kwargs):
         # TODO remove
         warnings.warn("<<draw_ellipsoid>> has been renamed <<draw_obstacle>>")
-        self.draw_obstacle(*args, **kwargs)
+        return self.draw_obstacle(*args, **kwargs)
         # sys.exit(0)
         
     def draw_obstacle(self, numPoints=20, a_temp = [0,0], draw_sfObs = False):

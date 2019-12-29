@@ -18,9 +18,9 @@ from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
 
 ########################################################################
 # Chose the option you want to run as a number in the option list (integer from -2 to 10)
-options = [-4]
+options = [-2]
 
-N_resol = 100
+N_resol = 10
 
 saveFigures=False
 
@@ -135,7 +135,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
             xAttractor = [0,0]
 
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem', noTicks=True)
+            # Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem', noTicks=True)
 
             a=[1, 1]
             p=[1,1]
@@ -150,10 +150,10 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
         if option==-1:
             # Two ellipses placed at x1=0 with dynamic center diplaced and center line in gray
-            a=[0.4, 1]
+            a=[1., 0.4]
             p=[1, 1]
             x0=[1.5, 0]
-            th_r=0/180*pi
+            th_r=90/180*pi
             sf=1
 
             obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
@@ -163,9 +163,9 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
             xAttractor = [0,0]
 
-            obs[0].center_dyn = x0
+            obs[0].set_reference_point(x0, in_global_frame=True)
 
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=False, figName='ellipse_centerMiddle', noTicks=True, )
+            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=False, figName='ellipse_centerMiddle', noTicks=True)
 
 
         if option==0:
@@ -182,18 +182,19 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
             xAttractor = [0,0]
 
-            obs[0].center_dyn = x0
+            obs[0].set_reference_point(x0, in_global_frame=True)
 
             Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=False, figName='ellipse_centerMiddle', noTicks=True)
 
-            pltLines(xAttractor, obs[0].center_dyn)
+            pltLines(xAttractor, obs[0].get_reference_point(in_global_frame=True))
             if saveFigures:
                 plt.savefig('fig/' + 'ellipseCenterMiddle_centerLine' + '.eps', bbox_inches='tight')       
             rat = 0.6
-            obs[0].center_dyn = [x0[0] - rat*np.sin(th_r)*a[1],
-                                 x0[1] - rat*np.cos(th_r)*a[1]]
+            x0_hat = [x0[0] - rat*np.sin(th_r)*a[1], x0[1] - rat*np.cos(th_r)*a[1]]
+            obs[0].set_reference_point(x0_hat, in_global_frame=True)
+                                 
             Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=False, figName='ellipse_centerNotMiddle', noTicks=True)
-            pltLines(xAttractor, obs[0].center_dyn)
+            pltLines(xAttractor, obs[0].get_reference_point(in_global_frame=True))
 
             if saveFigures:
                 plt.savefig('fig/' + 'ellipseCenterNotMiddle_centerLine' + '.eps', bbox_inches='tight')
@@ -246,12 +247,12 @@ def main(options=[0], N_resol=100, saveFigures=False):
             ylim = [-0.3, 5.2]
 
             col1= [0.7,0.3,0]
-            fig, ax =Simulation_vectorFields(xlim, ylim, N_resol, [obs[0]], xAttractor=xAttractor, saveFigure=saveFigures, figName='linearCombination_obstacle0', noTicks=True, streamColor=col1, obstacleColor=[col1], alphaVal=0.7)
+            fig, ax =Simulation_vectorFields(xlim, ylim, N_resol, [obs[0]], xAttractor=xAttractor, saveFigure=saveFigures, figName='linearCombination_obstacle0', noTicks=True, streamColor=col1, obstacleColor=[col1], alphaVal=0.7, returnFigureHandle=True)
 
             col2 = [0.05,0.3,0.05]
             Simulation_vectorFields(xlim, ylim, N_resol, [obs[1]], xAttractor=xAttractor, saveFigure=saveFigures, figName='linearCombination_obstacle_overlay', noTicks=True, streamColor=col2, obstacleColor=[col2], figHandle=[fig, ax], alphaVal=0.7)
 
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigures=saveFigures, figName='linearCombination_obstaclesBoth', noTicks=True)
+            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearCombination_obstaclesBoth', noTicks=True)
 
         if option==3:
             # Three obstacles touching, with and without common center
@@ -366,25 +367,6 @@ def main(options=[0], N_resol=100, saveFigures=False):
             obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
             Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='twoObstacles_concaveRegion_top')
-
-        if option==5:
-            # TOOD -- radial displacement algorithm
-            # Obstacles being overlapping an being perpendicular or parallel to flow 
-            xlim = [-1,4]
-            ylim = [-2,2]
-
-            ### Three obstacles touching - convergence
-            xAttractor = np.array([0,0])
-
-            a = [0.4,1.5]
-            p = [1,1]
-            x0 = [1.6, 0.0]
-            th_r = +0/180*pi
-            sf = 1.0
-            xd = [-3,3]
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
-
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='movingObstacle_notMoving', obs_avoidance_func=obs_avoidance_radialDisplace)
 
         if option==7:
             # Obstacle Avoidance with and without tail effect
@@ -506,10 +488,10 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
 if __name__==("__main__"):
     if len(sys.argv) > 1:
-        options = sys.argv[1]
+        options = [int(sys.argv[1])]
 
     if len(sys.argv) > 2:
-        N_resol = sys.argv[2]
+        N_resol = int(sys.argv[2])
 
     if len(sys.argv) > 3:
         saveFigures = sys.argv[3]

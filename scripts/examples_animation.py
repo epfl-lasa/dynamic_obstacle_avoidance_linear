@@ -22,7 +22,7 @@ from dynamic_obstacle_avoidance.visualization.animated_simulation import run_ani
 print(' ----- Script <<dynamic simulation>> started. ----- ')
 #############################################################
 # Choose a simulation between 0 and 12
-simulationNumber = 4
+simulationNumber = 6
 
 saveFigures = False
 #############################################################
@@ -124,8 +124,9 @@ def main(simulationNumber=0, saveFigures=False):
         rCent = 3
         # obs[n].center_dyn=[obs[n].x0[0], 
                            # obs[n].x0[1]]
-        obs[n].center_dyn=[obs[n].x0[0]-rCent*np.cos(obs[n].th_r),
-                           obs[n].x0[1]-rCent*np.sin(obs[n].th_r)]
+        obs[n].set_reference_point([obs[n].x0[0]-rCent*np.cos(obs[n].th_r),
+                                    obs[n].x0[1]-rCent*np.sin(obs[n].th_r)],
+                                   in_global_frame=True)
 
         # n = 1
         # obs[n].center_dyn=[obs[n].x0[0]-rCent*np.cos(obs[n].th_r),
@@ -595,9 +596,9 @@ def main(simulationNumber=0, saveFigures=False):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        simulationNumber = sys.argv[1]
+        simulationNumber = int(sys.argv[1])
 
     if len(sys.argv) > 2:
-        saveFigures = sys.argv[2]
+        saveFigures = bool(int(sys.argv[2]))
 
     main(simulationNumber=simulationNumber, saveFigures=saveFigures)

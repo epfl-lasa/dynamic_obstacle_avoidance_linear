@@ -218,11 +218,13 @@ class Animated():
             if self.dim==3:
                 self.centers[o].set_3d_properties(zs=obs[o].x0[2])
 
-            if hasattr(self.obs[o], 'center_dyn'):# automatic adaptation of center
-                self.cent_dyns[o].set_xdata(self.obs[o].center_dyn[0])
-                self.cent_dyns[o].set_ydata(self.obs[o].center_dyn[1])
-                if self.dim==3:
-                    self.cent_dyns[o].set_3d_properties(zs=self.obs[o].center_dyn[2])
+            # if hasattr(self.obs[o], 'center_dyn'):# automatic adaptation of center
+            reference_point = self.obs[o].get_reference_point(in_global_frame=True)
+            self.cent_dyns[o].set_xdata(reference_point[0])
+            self.cent_dyns[o].set_ydata(reference_point[1])
+            
+            if self.dim==3:
+                self.cent_dyns[o].set_3d_properties(zs=reference_point)
 
             if self.obs[o].always_moving or self.obs[o].x_end > self.t[self.iSim] or self.iSim<1: # First two rounds or moving
                 if self.dim ==2: # only show safety-contour in 2d, otherwise not easily understandable

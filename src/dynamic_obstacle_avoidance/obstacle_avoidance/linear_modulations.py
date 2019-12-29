@@ -229,7 +229,8 @@ def compute_modulation_matrix(x_t, obs, R, matrix_singularity_margin=pi/2.0*1.05
     reference_direction = obs.get_reference_direction(x_t, in_global_frame=False)
 
     # Check if there was correct placement of reference point
-    Gamma_referencePoint = obs.get_gamma(obs.reference_point)
+    Gamma_referencePoint = obs.get_gamma(obs.get_reference_point(in_global_frame=False))
+    # Gamma_referencePoint = obs.get_gamma(obs.local_reference_point)
     
     if not obs.is_boundary and Gamma_referencePoint >= 1:
         # Check what this does...

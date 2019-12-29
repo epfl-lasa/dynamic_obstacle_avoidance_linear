@@ -143,7 +143,9 @@ def compute_eigenvalueMatrix(Gamma, rho=1, dim=2, radialContuinity=True):
     return np.diag(np.hstack((lambda_referenceDir, np.ones(dim-1)*lambda_tangentDir)) )
 
 
-def compute_weights(distMeas, N=0, distMeas_lowerLimit=1, weightType='inverseGamma', weightPow=2):
+def compute_weights(distMeas, N=0, distMeas_lowerLimit=1, weightType='inverseGamma', weightPow=2, distMeas_min=None):
+    if not distMeas_min is None:
+        distMeas_lowerLimit = distMeas_min
     # UNTITLED5 Summary of this function goes here
     #   Detailed explanation goes here
 

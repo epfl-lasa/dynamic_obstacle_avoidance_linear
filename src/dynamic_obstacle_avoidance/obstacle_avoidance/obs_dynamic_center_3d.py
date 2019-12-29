@@ -179,8 +179,13 @@ def dynamic_center_3d(obs, intersection_obs, marg_dynCenter=1.3, N_distStep=3, r
             # change to nonlinear
             x_centDyn = np.squeeze(x_cyn_temp[:,it1,:])
 
-            obs[it1].center_dyn = np.sum(x_centDyn * np.tile(weight_obs,(obs[it1].d,1)), axis=1) + obs[it1].x0
+            # obs[it1].center_dyn = np.sum(x_centDyn * np.tile(weight_obs,(obs[it1].d,1)), axis=1) + obs[it1].x0
+            obs[it1].set_reference_point(
+                np.sum(x_centDyn * np.tile(weight_obs,(obs[it1].d,1)), axis=1) + obs[it1].x0,
+                in_global_frame=True)
+            
             #plt.plot(obs[it1].center_dyn[0], obs[it1].center_dyn[1], 'ro')
             
         else: # default center otherwise
-            obs[it1].center_dyn = obs[it1].x0
+            # obs[it1].center_dyn = obs[it1].x0
+            obs[it1].set_reference_point(obs[it1].x0, in_global_frame=True)

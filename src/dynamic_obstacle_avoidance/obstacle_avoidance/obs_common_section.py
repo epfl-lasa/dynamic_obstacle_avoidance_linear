@@ -201,35 +201,18 @@ def obs_common_section(obs):
                             if 1 > sum( (1/obs[it_obs2_].sf*rotMat[:,:,it_obs2_].T @ ( np.array(obs[it_obs1_].x0) - np.array(obs[it_obs2_].x0) )/ np.array(obs[it_obs2_].a) ) ** (2*np.array(obs[it_obs2_].p))):
                                 intersection_sf[it_intersect] = np.hstack([intersection_sf[it_intersect],np.tile(obs[it_obs1_].x0,(1,1)).T ] )
 
-
-    #if intersection_with_obs1 continue 
     if len(intersection_sf)==0:
         return  []
 
-    #plt.plot(intersection_sf[0][0,:], intersection_sf[0][1,:], 'r.')
-    
     for ii in range(len(intersection_obs)):
     #     plot(intersection_sf[ii](1,:),intersection_sf[ii](2,:),'x')
         intersection_sf[ii] = np.unique(intersection_sf[ii], axis=1)
 
         # Get numerical mean
         x_center_dyn= np.mean(intersection_sf[ii], axis=1)
-        #plt.plot(x_center_dyn[0], x_center_dyn[1], 'go')
         
         for it_obs in intersection_obs[ii]:
-            obs[it_obs].center_dyn = x_center_dyn
-
-        # sort points according to angle
-    #     intersec_sf_cent = intersection_sf - repmat(x_center_dyn,1,size(intersection_sf,2))
-
-
-        # TODO - replace atan2 for speed
-    #     [~, ind] = sort( atan2(intersec_sf_cent(2,:), intersec_sf_cent(1,:)))
-
-    #     intersection_sf = intersection_sf(:, ind)
-    #     intersection_sf = [intersection_sf, intersection_sf(:,1)]
-
-    #     intersection_obs = [1:size(obs,2)]
+            obs[it_obs].set_reference_point(x_center_dyn, in_global_frame=True)
 
     return intersection_obs 
 

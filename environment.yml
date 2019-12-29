@@ -1,4 +1,4 @@
-name: obstacle_avoidance_linear
+name: dynamic_obstacle_avoidance_linear
 channels:
   - defaults
   - conda-forge
@@ -98,4 +98,3 @@ dependencies:
   - zeromq=4.3.1=he6710b0_3
   - zlib=1.2.11=h7b6447c_3
 prefix: /home/lukas/Software/anaconda3/envs/dynamic_obstacle_avoidance
-

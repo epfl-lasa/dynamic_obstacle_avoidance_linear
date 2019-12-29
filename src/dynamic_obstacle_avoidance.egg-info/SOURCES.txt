@@ -12,6 +12,7 @@ src/dynamic_obstacle_avoidance.egg-info/top_level.txt
 src/dynamic_obstacle_avoidance/dynamical_system/__init__.py
 src/dynamic_obstacle_avoidance/dynamical_system/dynamical_system_representation.py
 src/dynamic_obstacle_avoidance/obstacle_avoidance/__init__.py
+src/dynamic_obstacle_avoidance/obstacle_avoidance/learning_obstacle.py
 src/dynamic_obstacle_avoidance/obstacle_avoidance/linear_modulations.py
 src/dynamic_obstacle_avoidance/obstacle_avoidance/modulation.py
 src/dynamic_obstacle_avoidance/obstacle_avoidance/obs_common_section.py
