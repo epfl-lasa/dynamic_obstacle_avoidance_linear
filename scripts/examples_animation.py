@@ -22,7 +22,7 @@ from dynamic_obstacle_avoidance.visualization.animated_simulation import run_ani
 print(' ----- Script <<dynamic simulation>> started. ----- ')
 #############################################################
 # Choose a simulation between 0 and 12
-simulationNumber = 6
+simulationNumber = 0
 
 saveFigures = False
 #############################################################
