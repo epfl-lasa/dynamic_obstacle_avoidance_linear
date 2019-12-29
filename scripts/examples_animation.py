@@ -212,6 +212,9 @@ def main(simulationNumber=0, saveFigures=False):
         run_animation(x_init, obs, x_range=x_range, y_range=y_range, dt=0.02, N_simuMax=1040, convergenceMargin=0.3, sleepPeriod=0.01, RK4_int=True)
 
     elif simulationNumber==4:
+        print('WARNING -- this simulation needs bug fixes...')
+        return 
+    
         # Moving in LAB
         x_range = [0,16]
         y_range = [0,9]
