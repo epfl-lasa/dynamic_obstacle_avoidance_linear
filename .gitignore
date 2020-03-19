@@ -1,2 +1,3 @@
 **/*.pyc
-*_old.py
+**/*_old.py
+**/*.egg-info/*
