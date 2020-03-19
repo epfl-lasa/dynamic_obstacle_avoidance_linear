@@ -100,6 +100,25 @@ Automatic and dynamic placement of the reference point is done with the function
 Complexer obstacles can either be formed using several ellipses, which already allows to form many star shaped obstacles.
 Note, more complex obstacles can be formed with an analytical description of the surface of the obstacle, but this module can not handle it yet
 
+
+### Learn Obstacles
+Obstacles can be learned using SVM (or other regression methods). This way a svm-function can be learned for each obstacles. See for the case of 2D data bellow:
+<p align="center">
+<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/wheelchairObstacles.png"  width="350"></>
+  <img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/wheelchairSimulation.png"  width="350"></>
+
+From this SVM score a Gamma-function can be established which is used for the calculation of the modulation matrix (including the derived normal):
+<p align="center">
+<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/wheelchairObstacles.png"  width="350"></>
+  <img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/wheelchairSimulation.png"  width="350"></>
+
+
+This allows then to modulate the system and guide a (in this case linear) dynamical system around a learned environment of obstacles:
+<p align="center">
+<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/wheelchairObstacles.png"  width="350"></>
+  <img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/wheelchairSimulation.png"  width="350"></>
+
+
 **References**     
 > [1] Huber, Lukas, Aude Billard, and Jean-Jacques E. Slotine. "Avoidance of Convex and Concave Obstacles with Convergence ensured through Contraction." IEEE Robotics and Automation Letters (2019).
 

@@ -178,7 +178,7 @@ for oo in range(len(Obstacles)):
 # create_normal_vector_field(Obstacles)
 
 attractor = np.array([0.8, 0.2])
-create_modulated_vector_field(Obstacles, attractor, resolution=30, plot_type_quiver=True)
-# create_modulated_vector_field(Obstacles, attractor, resolution=80, plot_type_quiver=False)
+# create_modulated_vector_field(Obstacles, attractor, resolution=30, plot_type_quiver=True)
+create_modulated_vector_field(Obstacles, attractor, resolution=80, plot_type_quiver=False)
 
 # read_obstacle_from_file(file_in_path, file_in_name)
