@@ -1,9 +1,11 @@
 '''
-# Library for the Modulation of Linear Systems
+Library for the Modulation of Linear Systems
 
 @author Lukas Huber
+@date 2019-11-29
+@info Obstacle avoidance for star-shaped obstacle in linear DS
 
-Copyright (c) 2019 under GPU license. 
+Copyright (c)2019 under GPU license
 '''
 
 import matplotlib.pyplot as plt
@@ -15,35 +17,35 @@ from dynamic_obstacle_avoidance.dynamical_system.dynamical_system_representation
 from dynamic_obstacle_avoidance.obstacle_avoidance.modulation import *
 
 import warnings
-
 import sys
 
 
-def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPow=2, repulsive_gammaMargin=0.01):
-    # This function modulates the dynamical system at position x and dynamics xd such that it avoids all obstacles obs. It can furthermore be forced to converge to the attractor. 
-    # 
-    # INPUT
-    # x [dim]: position at which the modulation is happening
-    # xd [dim]: initial dynamical system at position x
-    # obs [list of obstacle_class]: a list of all obstacles and their properties, which present in the local environment
-    # attractor [list of [dim]]]: list of positions of all attractors
-    # weightPow [int]: hyperparameter which defines the evaluation of the weight
-    #
-    # OUTPUT
-    # xd [dim]: modulated dynamical system at position x
-    #
-
-    # print('x', x)
-    # print('xd', xd)
-    # print('obs', obs)
+def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPow=2, repulsive_gammaMargin=0.01, repulsive_obstacle=True, velocicity_max=None, evaluate_in_global_frame=False, zero_vel_inside=False):
+    '''
+    This function modulates the dynamical system at position x and dynamics xd such that it avoids all obstacles obs. It can furthermore be forced to converge to the attractor. 
     
-    # Initialize Variables
+    INPUT
+    x [dim]: position at which the modulation is happening
+    xd [dim]: initial dynamical system at position x
+    obs [list of obstacle_class]: a list of all obstacles and their properties, which present in the local environment
+    attractor [list of [dim]]]: list of positions of all attractors
+    weightPow [int]: hyperparameter which defines the evaluation of the weight
+    
+    OUTPUT
+    xd [dim]: modulated dynamical system at position x
+    '''
+    
     N_obs = len(obs) #number of obstacles
-    if N_obs ==0:
+    if not N_obs: # No obstacle
         return xd
-    
-    d = x.shape[0]
-    Gamma = np.zeros((N_obs))
+
+    dim = obs[0].dimension
+
+    xd_norm = np.linalg.norm(xd)
+    if xd_norm:
+        xd_normalized = xd/xd_norm
+    else:
+        return xd # Trivial solution
 
     if type(attractor)==str:
         if attractor=='default': # Define attractor position
@@ -52,265 +54,159 @@ def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPo
         else:
             N_attr = 0            
     else:
-        N_attr = 1                 
+        N_attr = 1
 
-    # Linear and angular roation of velocity
-    xd_dx_obs = np.zeros((d,N_obs))
-    xd_w_obs = np.zeros((d,N_obs)) #velocity due to the rotation of the obstacle
+    if evaluate_in_global_frame:
+        pos_relative = np.tile(x, (N_obs, 1)).T
+    else:
+        pos_relative = np.zeros((dim, N_obs))
+        for n in range(N_obs):
+            pos_relative[:, n] = obs[n].transform_global2relative(x) # Move to obstacle centered frame
 
-    # Modulation matrices
-    E = np.zeros((d,d,N_obs))
-    D = np.zeros((d,d,N_obs))
-    M = np.zeros((d,d,N_obs))
-    E_orth = np.zeros((d,d,N_obs))
-
-    # Rotation matrix
-    R = np.zeros((d,d,N_obs))
-
-
+    Gamma = np.zeros((N_obs))
     for n in range(N_obs):
-        # Move the position into the obstacle frame of reference
-        if obs[n].th_r: # Nonzero value
-            R[:,:,n] = compute_R(d,obs[n].th_r)
-        else:
-            R[:,:,n] = np.eye(d)
+        Gamma[n] = obs[n].get_gamma(pos_relative[:, n], in_global_frame=evaluate_in_global_frame)
 
-        # Move to obstacle centered frame
-        x_t = R[:,:,n].T @ (x-obs[n].center_position)
-        E[:,:,n], D[:,:,n], Gamma[n], E_orth[:,:,n] = compute_modulation_matrix(x_t, obs[n], R[:,:,n])
+    if zero_vel_inside:
+        if any(Gamma < 1):
+            return np.zeros(dim)
+
+    if any(Gamma > 1e9):
+        return xd
         
+
     if N_attr:
         d_a = LA.norm(x - np.array(attractor)) # Distance to attractor
         weight = compute_weights(np.hstack((Gamma, [d_a])), N_obs+N_attr)
-
     else:
         weight = compute_weights(Gamma, N_obs)
-    xd_obs = np.zeros((d))
 
+    # Linear and angular roation of velocity
+    # TODO: transform to global/relative frame!
+    xd_dx_obs = np.zeros((dim, N_obs))
+    xd_w_obs = np.zeros((dim, N_obs))  #velocity due to the rotation of the obstacle
+
+    # Modulation matrices
+    E = np.zeros((dim, dim, N_obs))
+    D = np.zeros((dim, dim, N_obs))
+    E_orth = np.zeros((dim, dim, N_obs))
+    # M = np.zeros((dim, dim, N_obs))
+
+    for n in range(N_obs):
+        # x_t = obs[n].transform_global2relative(x) # Move to obstacle centered frame
+        D[:, :, n] = compute_diagonal_matrix(Gamma[n], dim)
+        E[:, :, n], E_orth[:, :, n] = compute_decomposition_matrix(obs[n], pos_relative[:, n], in_global_frame=evaluate_in_global_frame)
+        # E[:,:,n], D[:,:,n], Gamma_temp, E_orth[:,:,n] = compute_modulation_matrix(x_t, obs[n])
+    # if np.sum(weight)==0:
+        # return xd
+
+    # import pdb; pdb.set_trace() ## DEBUG ##
+    xd_obs = np.zeros((dim))
     
     for n in range(N_obs):
-        if d==2:
+        if dim==2:
             xd_w = np.cross(np.hstack(([0,0], obs[n].w)),
                             np.hstack((x-np.array(obs[n].center_position),0)))
             xd_w = xd_w[0:2]
         elif d==3:
-            xd_w = np.cross( obs[n].w, x-obs[n].center_position )
+            xd_w = np.cross(obs[n].w, x-obs[n].center_position)
         else:
-            warnings.warn('NOT implemented for d={}'.format(d))
+            xd_w = np.zeros(dim)
+            # raise ValueError('NOT implemented for d={}'.format(d))
+            warnings.warn('Angular velocity is not defined for={}'.format(d))
 
-        #the exponential term is very helpful as it help to avoid the crazy rotation of the robot due to the rotation of the object
+        #The Exponential term is very helpful as it help to avoid the crazy rotation of the robot due to the rotation of the object
         exp_weight = np.exp(-1/obs[n].sigma*(np.max([Gamma[n],1])-1))
         xd_obs_n = exp_weight*(np.array(obs[n].xd) + xd_w)
-
-        # xd_obs_n = E_orth[:,:,n].T @ xd_obs_n
-        # xd_obs_n[0] = np.max([xd_obs_n[0], 0]) # Onl use orthogonal part 
-        # xd_obs_n = E_orth[:,:,n] @ xd_obs_n
         
         xd_obs = xd_obs + xd_obs_n*weight[n]
-
     xd = xd-xd_obs #computing the relative velocity with respect to the obstacle
 
-    # Create orthogonal matrix
-    xd_norm = LA.norm(xd)
-    
-    if xd_norm: # nonzero
-        xd_normalized = xd/xd_norm
-    else:
-        xd_normalized=xd
-
-    xd_t = np.array([xd_normalized[1], -xd_normalized[0]])
-
-    Rf = np.array([xd_normalized, xd_t]).T
-
-    
-    xd_hat = np.zeros((d, N_obs))
+    xd_hat = np.zeros((dim, N_obs))
     xd_hat_magnitude = np.zeros((N_obs))
-    k_ds = np.zeros((d-1, N_obs))
-        
+    
     for n in range(N_obs):
-        # xd_R = LA.pinv(E[:,:,n]) @ R[:,:,n].T @ xd
-        
-        M[:,:,n] = R[:,:,n] @ E[:,:,n] @ D[:,:,n] @ LA.pinv(E[:,:,n]) @ R[:,:,n].T
-        
-        xd_hat[:,n] = M[:,:,n] @ xd # velocity modulation
-        
-        # if False:
-        if Gamma[n] < (1+repulsive_gammaMargin): # Safety for implementation (Remove for pure algorithm)
-            repulsive_power = 5
-            repulsive_factor = 5
-            repulsive_gamma = (1+repulsive_gammaMargin)
-            
-            repulsive_velocity =  ((repulsive_gamma/Gamma[n])**repulsive_power-
-                                    repulsive_gamma)*repulsive_factor 
-            # print("\n\n Add repulsive vel: {} \n\n".format(repulsive_velocity))
-            xd_hat[:,n] += R[:,:,n] @ E[:,0,n] * repulsive_velocity
-
-        xd_hat_magnitude[n] = np.sqrt(np.sum(xd_hat[:,n]**2)) 
-        if xd_hat_magnitude[n]: # Nonzero hat_magnitude
-            xd_hat_normalized = xd_hat[:,n]/xd_hat_magnitude[n] # normalized direction
+        if obs[n].is_boundary and E_orth[:, 0, n].T.dot(xd) <0:
+            # Only consider boundary when moving towards (normal direction)
+            xd_hat[:, n] = xd
         else:
-            xd_hat_normalized = xd_hat[:,n]
-        
-        if not d==2:
-            warnings.warn('not implemented for d neq 2')
+            # Matrix inversion cost between O(n^2.373) - O(n^3)
+            # M[:,:,n] = dot(E[:,:,n]).dot(D[:,:,n]).dot(LA.pinv(E[:,:,n]))
+            if not evaluate_in_global_frame:
+                xd_temp = obs[n].transform_global2relative_dir(xd)
+            else:
+                xd_temp = np.copy(xd)
 
-        xd_hat_normalized_velocityFrame = Rf @ xd_hat_normalized
-
-        # Kappa space - directional space
-        k_fn = xd_hat_normalized_velocityFrame[1:]
-        kfn_norm = LA.norm(k_fn) # Normalize
-        if kfn_norm:# nonzero
-            k_fn = k_fn/ kfn_norm
+            # Modulation with M = E @ D @ E^-1
+            xd_hat[:, n] = E[:,:,n].dot(D[:,:,n]).dot(LA.pinv(E[:,:,n])).dot(xd_temp)
             
-        sumHat = np.sum(xd_hat_normalized*xd_normalized)
-        if sumHat > 1 or sumHat < -1:
-            sumHat = max(min(sumHat, 1), -1)
-            warnings.warn('cosinus out of bound!')
+            if not evaluate_in_global_frame:
+                xd_hat[:, n] = obs[n].transform_relative2global_dir(xd_hat[:, n])
+                
+            # xd_hat[:,n] = M[:,:,n].dot(xd) # velocity modulation
+            # import pdb; pdb.set_trace() ## DEBUG ##
             
-        # !!!! ??? is this the same as 
-        # np.arccos(sumHat) == np.arccos(xd_hat_normalized_velocityFrame[0])
-        
-        k_ds[:,n] = np.arccos(sumHat)*k_fn.squeeze()
+        if repulsive_obstacle:
+            # Move away from center in case of a collision
+            if Gamma[n] < (1+repulsive_gammaMargin): 
+                repulsive_power = 5
+                repulsive_factor = 5
+                repulsive_gamma = (1+repulsive_gammaMargin)
+                
+                repulsive_speed =  ((repulsive_gamma/Gamma[n])**repulsive_power-
+                                       repulsive_gamma)*repulsive_factor
+                if obs[n].is_boundary:
+                    repulsive_speed *= (-1)
+                # xd_hat[:,n] += R[:,:,n] .dot(E[:, 0, n]) * repulsive_velocity
+                # x_t = R[:,:,n].T.dot(x-obs[n].center_position)
+                norm_xt = np.linalg.norm(pos_relative[:, n])
+                if (norm_xt): # nonzero
+                    repulsive_velocity = pos_relative[:, n]/norm_xt * repulsive_speed
+                else:
+                    repulsive_velocity = np.zeros(dim)
+                    repulsive_velocity[0] = 1*repulsive_speed
+                    
+                xd_hat[:, n] = repulsive_velocity
 
-    # xd_hat_magnitude = np.sqrt(np.sum(xd_hat**2, axis=0) ) # TODO - remove as already caclulated
-    if N_attr: #nonzero
-        k_ds = np.hstack((k_ds, np.zeros((d-1, N_attr)) )) # points at the origin
+        xd_hat_magnitude[n] = np.sqrt(np.sum(xd_hat[:,n]**2))
+
+    xd_hat_normalized = np.zeros(xd_hat.shape)
+    ind_nonzero = (xd_hat_magnitude>0)
+    if np.sum(ind_nonzero):
+        xd_hat_normalized[:, ind_nonzero] = xd_hat[:, ind_nonzero]/np.tile(xd_hat_magnitude[ind_nonzero], (dim, 1))
+
+    if N_attr:
+        # IMPLEMENT PROPERLY & TEST
+        k_ds = np.hstack((k_ds, np.zeros((dim-1, N_attr)) )) # points at the origin
         xd_hat_magnitude = np.hstack((xd_hat_magnitude, LA.norm((xd))*np.ones(N_attr) ))
         
-    # Weighted interpolation for several obstacles
-    # weight = weight**weightPow
-    # if not LA.norm(weight,2):
-        # warnings.warn('trivial weight.')
-    # weight = weight/LA.norm(weight,2)
-    
-    xd_magnitude = np.sum(xd_hat_magnitude*weight)
-    k_d = np.sum(k_ds*np.tile(weight, (d-1, 1)), axis=1)
-
-    norm_kd = LA.norm(k_d)
-    
-    if norm_kd: # Nonzero
-        n_xd = Rf.T @ np.hstack((np.cos(norm_kd), np.sin(norm_kd)/norm_kd*k_d ))
+        total_weight = 1-weight_attr # Does this work
     else:
-        n_xd = Rf.T @ np.hstack((1, k_d ))
+        total_weight = 1
 
-    xd = xd_magnitude*n_xd.squeeze()
+    # import pdb; pdb.set_trace() ## DEBUG ##
 
-    # transforming back from object frame of reference to inertial frame of reference
+    weighted_direction = get_directional_weighted_sum(reference_direction=xd_normalized, directions=xd_hat_normalized, weights=weight, total_weight=total_weight)
+
+    xd_magnitude = np.sum(xd_hat_magnitude*weight)
+    xd = xd_magnitude*weighted_direction.squeeze()
+
     xd = xd + xd_obs
+    if not velocicity_max is None:
+        xd_norm = np.linalg.norm(xd)
+        if xd_norm > velocicity_max:
+            xd = xd/xd_norm * velocicity_max
+            
+    # transforming back from object frame of reference to inertial frame of reference
 
+    
     return xd
 
 
-def compute_modulation_matrix(x_t, obs, R, matrix_singularity_margin=pi/2.0*1.05):
-    # The function evaluates the gamma function and all necessary components needed to construct the modulation function, to ensure safe avoidance of the obstacles.
-    # Beware that this function is constructed for ellipsoid only, but the algorithm is applicable to star shapes.
-    # 
-    # Input
-    # x_t [dim]: The position of the robot in the obstacle reference frame
-    # obs [obstacle class]: Description of the obstacle with parameters
-    # R [dim x dim]: Rotation matrix 
-    #
-    # Output
-    # E [dim x dim]: Basis matrix with rows the reference and tangent to the obstacles surface
-    # D [dim x dim]: Eigenvalue matrix which is responsible for the modulation
-    # Gamma [dim]: Distance function to the obstacle surface (in direction of the reference vector)
-    # E_orth [dim x dim]: Orthogonal basis matrix with rows the normal and tangent
-
-    dim = obs.dim
-    
-    if hasattr(obs, 'rho'):
-        rho = np.array(obs.rho)
-    else:
-        rho = 1
-
-    Gamma = obs.get_gamma(x_t, in_global_frame=False) # function for ellipsoids
-    
-    normal_vector = obs.get_normal_direction(x_t, in_global_frame=False)
-    reference_direction = obs.get_reference_direction(x_t, in_global_frame=False)
-
-    # Check if there was correct placement of reference point
-    Gamma_referencePoint = obs.get_gamma(obs.get_reference_point(in_global_frame=False))
-    # Gamma_referencePoint = obs.get_gamma(obs.local_reference_point)
-    
-    if not obs.is_boundary and Gamma_referencePoint >= 1:
-        # Check what this does...
-        
-        # surface_position = obs.get_obstace_radius* x_t/LA.norm(x_t)
-        # direction_surface2reference = obs.get_reference_point()-surface_position
-
-        # Per default negative
-        referenceNormal_angle = np.arccos(reference_direction.T @ normal_vector)
-        
-        # if referenceNormal_angle < (matrix_singularity_margin):
-            # x_global = obs.transform_relative2global(x_t)
-            # plt.quiver(x_global[0],x_global[1], normal_vector[0], normal_vector[1], 'r')
-            # plt.quiver(x_global[0],x_global[1], normal_vector[0], normal_vector[1], color='r')
-            # plt.quiver(x_global[0],x_global[1], reference_direction[0], reference_direction[1], color='b')
-            
-            # referenceNormal_angle = np.min([0, referenceNormal_angle-pi/2.0])
-    
-            # Gamma_convexHull = 1*referenceNormal_angle/(matrix_singularity_margin-pi/2.0)
-            # Gamma = np.max([Gamma, Gamma_convexHull])
-            
-            # reference_orthogonal = (normal_vector -
-                                    # reference_direction * reference_direction.T @ normal_vector)
-            # normal_vector = (reference_direction*np.sin(matrix_singularity_margin)
-                             # + reference_orthogonal*np.cos(matrix_singularity_margin))
-
-            # plt.quiver(x_global[0],x_global[1], normal_vector[0], normal_vector[1], color='g')
-            # plt.ion()
-            
-    E_orth = np.zeros((dim, dim))
-    
-    # Create orthogonal basis matrix        
-    E_orth[:, 0] = normal_vector# Basis matrix
-
-    for ii in range(1,dim):
-
-        if dim ==2:
-            E_orth[0, 1] = E_orth[1, 0]
-            E_orth[1, 1] = - E_orth[0, 0]
-        else:
-            warnings.warn('Implement higher dimensions for E')
-            
-        # TODO higher dimensions
-        # E[:dim-(ii), ii] = normal_vector[:dim-(ii)]*normal_vector[dim-(ii)]
-        # E[dim-(ii), ii] = -np.dot(normal_vector[:dim-(ii)], normal_vector[:dim-(ii)])
-        # E_orth[:, ii] = E_orth[:, ii]/LA.norm(E_orth[:, ii])
-
-    E = np.copy((E_orth))
-    E[:, 0] = -reference_direction
-    
-    eigenvalue_reference, eigenvalue_tangent = calculate_eigenvalues(Gamma,
-                                                                     is_boundary=obs.is_boundary)
-    D = np.diag(np.hstack((eigenvalue_reference, np.ones(dim-1)*eigenvalue_tangent)))
-
-    return E, D, Gamma, E_orth
-
-
-def calculate_eigenvalues(Gamma, rho=1, is_boundary=False):
-    if Gamma<=1:# point inside the obstacle
-        delta_eigenvalue = 1 
-    else:
-        delta_eigenvalue = 1./abs(Gamma)**(1/rho)
-
-    eigenvalue_reference = 1 - delta_eigenvalue
-    # eigenvalue_reference = 0.1
-    
-    if is_boundary:
-        eigenvalue_tangent = 1
-    else:
-        eigenvalue_tangent = 1 + delta_eigenvalue            
-
-    # print('eig vals r={}, tang={}'.format(eigenvalue_reference, eigenvalue_tangent))
-    # import pdb; pdb.set_trace() ## DEBUG ##
-    
-    return eigenvalue_reference, eigenvalue_tangent
-
-
 def obs_avoidance_rk4(dt, x, obs, obs_avoidance=obs_avoidance_interpolation_moving, ds=linearAttractor, x0=False):
-    # Fourth order integration of obstacle avoidance differential equation
+    ''' Fourth order integration of obstacle avoidance differential equation '''
     # NOTE: The movement of the obstacle is considered as small, hence position and movement changed are not considered. This will be fixed in future iterations.
+    # TODO: More General Implementation (find library)
 
     if type(x0)==bool:
         x0 = np.zeros(np.array(x).shape[0])
@@ -341,6 +237,8 @@ def obs_avoidance_rk4(dt, x, obs, obs_avoidance=obs_avoidance_interpolation_movi
     k4 = dt*xd
 
     # x final
+    # Maybe: directional sum? Can this be done?
     x = x + 1./6*(k1+2*k2+2*k3+k4) # + O(dt^5)
+
 
     return x

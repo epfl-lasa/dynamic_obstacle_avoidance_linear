@@ -14,11 +14,13 @@ import matplotlib.pyplot as plt
 # Custom libraries
 from dynamic_obstacle_avoidance.dynamical_system.dynamical_system_representation import *
 from dynamic_obstacle_avoidance.visualization.vector_field_visualization import *  #
-from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
+# from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
+from dynamic_obstacle_avoidance.obstacle_avoidance.ellipse_obstacles import *
+
 
 ########################################################################
 # Chose the option you want to run as a number in the option list (integer from -2 to 10)
-options = [-2]
+options = [0]
 
 N_resol = 10
 
@@ -106,7 +108,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             th_r=0
             sf=1
             vel = [0, 0]
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=vel))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=vel))
 
 
             a=[0.5, 1.5]
@@ -115,9 +117,9 @@ def main(options=[0], N_resol=100, saveFigures=False):
             th_r=-40/180*pi
             sf=1
             vel = [0, 0]
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=vel))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=vel))
 
-            obs[0].set_reference_point([0.3, 3], in_global_frame=False)
+            obs[0].set_reference_point(np.array([0.3, 3]), in_global_frame=False)
             obs[1].set_reference_point(obs[0].get_reference_point(in_global_frame=True), in_global_frame=True)
             # Simulation_vectorFields(x_lim, y_lim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCircle', noTicks=False, figureSize=(6.,5))
 
@@ -143,7 +145,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             th_r=0/180*pi
             sf=1
             vel = [0, 0]
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=vel))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=vel))
 
             Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCircle', noTicks=True)
 
@@ -156,7 +158,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             th_r=90/180*pi
             sf=1
 
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
             xlim = [-0.5,4]
             ylim = [-2,2]
@@ -172,10 +174,10 @@ def main(options=[0], N_resol=100, saveFigures=False):
             # Two ellipses placed at x1=0 with dynamic center diplaced and center line in gray
             a=[0.4, 1]
             p=[1,1]
-            x0=[1.5,0]
+            x0=np.array([1.5,0])
             th_r=0/180*pi
             sf=1
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
             xlim = [-0.5,4]
             ylim = [-2,2]
@@ -202,14 +204,14 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
         if option==1:
             # Two ellipses combined to represent robot arm -- remove outlier plotting when saving!!
-            obs.append(Obstacle(
+            obs.append(Ellipse(
                 a=[1.1, 1.4],
                 p=[2,2],
                 x0=[3.0, 1.3],
                 th_r=0/180*pi,
                 sf=1))
 
-            obs.append(Obstacle(
+            obs.append(Ellipse(
                 a=[2, 0.4],
                 p=[2,2],
                 x0=[2.5, 3],
@@ -234,14 +236,14 @@ def main(options=[0], N_resol=100, saveFigures=False):
             x0 = [-1.0, 3.2]
             th_r = -60/180*pi
             sf = 1.0
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
             a = [1.4,1.0]
             p = [3,3]
             x0 = [1.2, 1.5]
             th_r = -30/180*pi
             sf = 1.0
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
             xlim = [-2.5,3.2]
             ylim = [-0.3, 5.2]
@@ -274,7 +276,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             x0 = [2.+dx, 3.2-dy]
             th_r = -60/180*pi
             sf = 1.2
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
             #obs[0].center_dyn = centr
 
             a = [1,0.4]
@@ -282,7 +284,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             x0 = [1.5+dx, 1.6-dy]
             th_r = +60/180*pi
             sf = 1.2
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
             #obs[1].center_dyn = centr
 
             a = [1.2,0.2]
@@ -290,7 +292,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             x0 = [3.3+dx,2.1-dy]
             th_r = -20/180*pi
             sf = 1.2
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
             #obs[2].center_dyn = centr
 
 
@@ -309,21 +311,21 @@ def main(options=[0], N_resol=100, saveFigures=False):
             x0 = [2.5+dx, 4.1-dy]
             th_r = 0*pi
             sf = 1.2
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
             a = [1.2,0.2]
             p = [2,2]
             x0 = [2.3+dx,3.1-dy]
             th_r = 20/180*pi
             sf = 1.2
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
             a = [1,0.4]
             p = [1,4]
             x0 = [2.5+dx, 2.0-dy]
             th_r= -25/180*pi
             sf = 1.2
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
             Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='three_obstacles_touching_noConvergence')
 
@@ -341,35 +343,35 @@ def main(options=[0], N_resol=100, saveFigures=False):
             x0 = [3, 0.9]
             th_r = +40/180*pi
             sf = 1.2
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
             a = [1.2,0.4]
             p = [1,3]
             x0 = [3, -1.0]
             th_r = -40/180*pi
             sf = 1.2
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='twoObstacles_concaveRegion_front')
+            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='twoEllipses_concaveRegion_front')
 
             a = [1.8,0.3]
             p = [1,1]
             x0 = [4.0, -0.4]
             th_r = +60/180*pi
             sf = 1.2
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
             a = [1.2,0.4]
             p = [1,3]
             x0 = [2.3, -0.0]
             th_r = -40/180*pi
             sf = 1.2
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='twoObstacles_concaveRegion_top')
+            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='twoEllipses_concaveRegion_top')
 
         if option==7:
-            # Obstacle Avoidance with and without tail effect
+            # Ellipse Avoidance with and without tail effect
             xlim = [-0.1,4]
             ylim = [-2,2]
 
@@ -382,7 +384,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             th_r = -15/180*pi
             sf = 1.0
             xd = [-3,3]
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf, tail_effect=False))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf, tail_effect=False))
 
 
             Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='ellipse_tailEffectOff', obs_avoidance_func=obs_avoidance_interpolation_moving, showLabel=False)
@@ -405,7 +407,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             th_r0 = 38/180*pi
             rCent=2.4
             for n in range(N_obs):
-                obs.append(Obstacle(
+                obs.append(Ellipse(
                     a = [0.4,3],
                     p = [1,1],
                     x0 = [R*cos(2*pi/N_obs*n), R*sin(2*pi/N_obs*n)],
@@ -444,7 +446,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             ]
 
             for n in range(len(x0_list)):
-                obs.append(Obstacle(
+                obs.append(Ellipse(
                     a = [0.5,0.5],
                     p = [1,1],
                     x0 = x0_list[n],
@@ -460,7 +462,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             x0=[2,0]
             th_r=0/180*pi
             sf=1
-            obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
+            obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf))
 
 
             xlim = [-0.5,4]
@@ -484,10 +486,9 @@ def main(options=[0], N_resol=100, saveFigures=False):
                 plt.savefig('fig/' + 'ellipseCenterNotMiddle_centerLine_pres_colMap' + '.eps', bbox_inches='tight')
 
 
-    
 
 if __name__==("__main__"):
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1 and not sys.argv[1]=='-i':
         options = [int(sys.argv[1])]
 
     if len(sys.argv) > 2:

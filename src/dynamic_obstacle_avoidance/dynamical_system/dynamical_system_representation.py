@@ -9,6 +9,19 @@ Library of different dynamical systems
 import numpy as np
 import numpy.linalg as LA
 
+def linear_ds_max_vel(x, attractor=np.array([0,0]), max_vel=0.5, slow_down_region=0.5):
+    vel = attractor-x
+
+    dist = np.linalg.norm(vel)
+    if dist < slow_down_region:
+        max_vel = max_vel*dist/slow_down_region
+        
+    norm_vel = dist
+    if norm_vel>max_vel:
+        vel = vel/norm_vel*max_vel
+
+    return vel
+
 
 def linearAttractor(x, x0='default'):
     # change initial value for n dimensions

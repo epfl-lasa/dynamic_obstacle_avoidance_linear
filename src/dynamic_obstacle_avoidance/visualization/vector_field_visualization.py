@@ -90,7 +90,7 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
         obs_hole = []
 
         for n in range(len(obs)):
-            x_obs_sf = obs[n].x_obs_sf # todo include in obs_draw_ellipsoid
+            x_obs_sf = obs[n].x_obs_sf.T # todo include in obs_draw_ellipsoid
             
             plt.plot([x_obs_sf[i][0] for i in range(len(x_obs_sf))],
                 [x_obs_sf[i][1] for i in range(len(x_obs_sf))], 'k--')
@@ -111,7 +111,7 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
                 # obs_hole.append(plt.Polygon(obs[n].x_obs, zorder=2, alpha=0.5))
 
             # obs_polygon.append( plt.Polygon(obs[n].x_obs, zorder=2, alpha=0.5))
-            obs_polygon.append( plt.Polygon(obs[n].x_obs, alpha=0.5, zorder=1))
+            obs_polygon.append( plt.Polygon(obs[n].x_obs.T, alpha=0.5, zorder=1))
 
             if obs[n].is_boundary:
                 boundary_polygon = plt.Polygon( 
@@ -131,7 +131,7 @@ def Simulation_vectorFields(x_range=[0,10], y_range=[0,10], point_grid=10, obs=[
                 else:
                     obs_polygon[n].set_color(np.array([176,124,124])/255)
             
-            obs_polygon_sf.append( plt.Polygon(obs[n].x_obs_sf, zorder=1, alpha=0.2))
+            obs_polygon_sf.append( plt.Polygon(obs[n].x_obs_sf.T, zorder=1, alpha=0.2))
             obs_polygon_sf[n].set_color([1,1,1])
 
             if obs[n].is_boundary:
