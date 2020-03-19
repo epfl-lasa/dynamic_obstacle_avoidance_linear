@@ -104,9 +104,9 @@ Note, more complex obstacles can be formed with an analytical description of the
 ### Learn Obstacles
 Obstacles can be learned using SVM (or other regression methods). This way a svm-function can be learned for each obstacles. See for the case of 2D data bellow:
 <p align="center">
-<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/learning_raw_data.png"  height="300">
-<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/learning_svm_score_obs1.png"  height="300">
-<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/learning_svm_score_obs2.png"  height="300">
+<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/learning_raw_data.png"  height="280">
+<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/learning_svm_score_obs1.png"  height="280">
+<img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/learning_svm_score_obs2.png"  height="280">
 
 From this SVM score a Gamma-function can be established which is used for the calculation of the modulation matrix (including the derived normal):
 <p align="center">
