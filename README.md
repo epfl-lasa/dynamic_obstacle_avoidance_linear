@@ -118,6 +118,8 @@ This allows then to modulate the system and guide a (in this case linear) dynami
 <p align="center">
 <img src="https://raw.githubusercontent.com/epfl-lasa/dynamic_obstacle_avoidance_linear/master/images/learning_ds_comparison.png"  width="700"></>
 
+This pictures can be recreated by running the file *scripts/test_learning_obstacle_gradient.py*. A new 'learning' obstacle should be created similar to the **LearningObstacle**-class found in the file *ObstacleAvoidance/obstacle_learning.py*.
+
 
 
 **References**     
