@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from math import pi
 
-def ds_sinus(pos, x_position_attractor=6, sinus_magnitude=2,
+def ds_sinus(pos, x_position_attractor, distance_x=6, sinus_magnitude=2,
              maximum_velocity=0.5, y_scaling=2):
     ''' 2D dynamical system which follows sinus wave form
 
@@ -9,7 +10,7 @@ def ds_sinus(pos, x_position_attractor=6, sinus_magnitude=2,
     position: np.array of shape (2.)
     x_position: float '''
 
-    desired_y = np.sin(pos[0]/x_position_attractor*pi) * sinus_magnitude
+    desired_y = np.sin(pos[0]/distance_x*pi) * sinus_magnitude
 
     vel = np.zeros(2)
     vel[1] = desired_y-pos[1]
@@ -47,8 +48,7 @@ vel = np.zeros((n_grid, n_grid, dim))
 
 for ix in range(n_grid):
     for iy in range(n_grid):
-        vel[ix, iy, :] = ds_sinus(pos[ix, iy, :], attractor_pos[0], 2)
-
+        vel[ix, iy, :] = ds_sinus(pos[ix, iy, :], 0)
 
 # Draw plot
 plt.ion()
@@ -58,9 +58,4 @@ plt.quiver(XX, YY, vel[:, :, 0], vel[:, :, 1])
 plt.plot(attractor_pos[0], attractor_pos[1], 'k*', markeredgewidth=4, markersize=13)
 plt.plot(0, 0, 'k.', markeredgewidth=4, markersize=13)
 
-
 print("The code finished correctly.")
-
-        
-        
-    
