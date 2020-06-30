@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import pi
 
-def ds_sinus(pos, x_position_attractor, distance_x=6, sinus_magnitude=2,
+def ds_sinus(pos, distance_x=6, sinus_magnitude=2,
+             flip_curve=False, move_backwards=False,
              maximum_velocity=0.5, y_scaling=2):
     ''' 2D dynamical system which follows sinus wave form
 
@@ -11,10 +12,16 @@ def ds_sinus(pos, x_position_attractor, distance_x=6, sinus_magnitude=2,
     x_position: float '''
 
     desired_y = np.sin(pos[0]/distance_x*pi) * sinus_magnitude
+    if flip_curve:
+        desired_y *= (-1)
 
     vel = np.zeros(2)
     vel[1] = desired_y-pos[1]
-    vel[0] = x_position_attractor-pos[0]
+        
+    vel[0] = distance_x-pos[0]
+    if move_backwards:
+        vel[0] *= (-1)
+
 
     if  np.abs(vel[0]) > maximum_velocity:
         vel[0] = np.copysign(maximum_velocity, vel[0])
@@ -48,8 +55,9 @@ vel = np.zeros((n_grid, n_grid, dim))
 
 for ix in range(n_grid):
     for iy in range(n_grid):
-        vel[ix, iy, :] = ds_sinus(pos[ix, iy, :], 0)
-
+        vel[ix, iy, :] = ds_sinus(pos[ix, iy, :], 6,
+                                  flip_curve=True,
+                                  move_backwards=True)
 # Draw plot
 plt.ion()
 # fig, ax = plt.figure()
