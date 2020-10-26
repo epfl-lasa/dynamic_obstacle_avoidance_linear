@@ -20,11 +20,17 @@ from dynamic_obstacle_avoidance.obstacle_avoidance.ellipse_obstacles import *
 
 ########################################################################
 # Chose the option you want to run as a number in the option list (integer from -2 to 10)
-options = [0]
+options = [7]
+# Nadia's comments:
+# Examples that don't run: -3/1/3/4/8/9
+# Examples 5-6 don't exist
+# Examples that work: -2/-1/0/2/7
 
-N_resol = 10
+N_resol = 40
 
-saveFigures=False
+# N_resol = 10
+
+saveFigures=True
 
 ########################################################################
 
@@ -128,7 +134,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
                                      np.linspace(y_lim[0], y_lim[1], n_points)))
             
             points_init = points_init[:, 1:-1]
-            Simulation_vectorFields(x_lim, y_lim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCircle', noTicks=False, draw_vectorField=False, points_init=points_init, automatic_reference_point=False)
+            Simulation_vectorFields(x_lim, y_lim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCircle_3', noTicks=False, draw_vectorField=False, points_init=points_init, automatic_reference_point=False)
 
 
         if option==-2:
@@ -147,7 +153,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             vel = [0, 0]
             obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=vel))
 
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCircle', noTicks=True)
+            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='linearSystem_avoidanceCircle_2', noTicks=True)
 
 
         if option==-1:
@@ -167,7 +173,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
             obs[0].set_reference_point(x0, in_global_frame=True)
 
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=False, figName='ellipse_centerMiddle', noTicks=True)
+            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='ellipse_centerMiddle', noTicks=True)
 
 
         if option==0:
@@ -186,7 +192,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
             obs[0].set_reference_point(x0, in_global_frame=True)
 
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=False, figName='ellipse_centerMiddle', noTicks=True)
+            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='ellipse_centerMiddle_0', noTicks=True)
 
             pltLines(xAttractor, obs[0].get_reference_point(in_global_frame=True))
             if saveFigures:
@@ -195,7 +201,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
             x0_hat = [x0[0] - rat*np.sin(th_r)*a[1], x0[1] - rat*np.cos(th_r)*a[1]]
             obs[0].set_reference_point(x0_hat, in_global_frame=True)
                                  
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=False, figName='ellipse_centerNotMiddle', noTicks=True)
+            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures,  figName='ellipse_centerNotMiddle_0', noTicks=True)
             pltLines(xAttractor, obs[0].get_reference_point(in_global_frame=True))
 
             if saveFigures:
@@ -223,7 +229,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
             xAttractor = [0,0]
 
-            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=False, figName='convexRobot', noTicks=True)
+            Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures,figName='convexRobot', noTicks=True)
 
         if option==2:
             # Decomposition several obstacles - obstacle 1, obstacle 2, both obstacles
@@ -379,6 +385,8 @@ def main(options=[0], N_resol=100, saveFigures=False):
             xAttractor = np.array([0,0])
 
             a = [0.35,1.4]
+
+            a = [0.68,1.4]
             p = [1,1]
             x0 = [1.9, 0.0]
             th_r = -15/180*pi
@@ -393,7 +401,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
             Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='ellipse_tailEffectOn', obs_avoidance_func=obs_avoidance_interpolation_moving, showLabel=False)
 
-        if option==7:
+        if option==8:
             figSize = (14,12)
 
             xlim = [-10,10]
@@ -455,7 +463,7 @@ def main(options=[0], N_resol=100, saveFigures=False):
 
             Simulation_vectorFields(xlim, ylim, N_resol, obs, xAttractor=xAttractor, saveFigure=saveFigures, figName='wheelchairSimulation', obs_avoidance_func=obs_avoidance_interpolation_moving, showLabel=False, figureSize=figSize)
 
-        if option==8:
+        if option==10:
             # Two ellipses placed at x1=0 with dynamic center diplaced and center line in gray -- with color Code for velocity
             a=[0.5, 1.4]
             p=[1,1]

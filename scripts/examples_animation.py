@@ -15,16 +15,19 @@ from numpy import pi
 
 import time
 
-from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
+# from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
+# from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
+from dynamic_obstacle_avoidance.obstacle_avoidance.ellipse_obstacles import *
+
 from dynamic_obstacle_avoidance.obstacle_avoidance.modulation import *
 from dynamic_obstacle_avoidance.visualization.animated_simulation import run_animation, samplePointsAtBorder
 
 print(' ----- Script <<dynamic simulation>> started. ----- ')
 #############################################################
 # Choose a simulation between 0 and 12
-simulationNumber = 0
+simulationNumber = 1
 
-saveFigures = False
+saveFigures = True
 #############################################################
 
 def main(simulationNumber=0, saveFigures=False):
@@ -57,7 +60,8 @@ def main(simulationNumber=0, saveFigures=False):
         x_start = 0
         x_end = 10
 
-        obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=xd, x_start=x_start, x_end=x_end, w=w))
+        obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=xd, x_start=x_start, x_end=x_end, w=w))
+        # obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=xd, x_start=x_start, x_end=x_end, w=w))
         a = [3,2]
         p = [1,1]
         x0 = [7,-6]
@@ -70,7 +74,18 @@ def main(simulationNumber=0, saveFigures=False):
         x_end = 0
         #obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=xd, x_start=x_start, x_end=x_end, w=w))
 
-        ob2 = Obstacle(
+        # ob2 = Obstacle(
+        #     a= [1,1],
+        #     p= [1,1],
+        #     x0= [10,-8],
+        #     th_r= -40/180*pi,
+        #     sf=1,
+        #     xd=[0, 0],
+        #     x_start=0,
+        #     x_end=0,
+        #     w=0
+        # )
+        ob2 = Ellipse(
             a= [1,1],
             p= [1,1],
             x0= [10,-8],
@@ -83,7 +98,18 @@ def main(simulationNumber=0, saveFigures=False):
         )
         #obs.append(ob2)
 
-        ob3 = Obstacle(
+        # ob3 = Obstacle(
+        #     a= [1,1],
+        #     p= [1,1],
+        #     x0= [14,-2],
+        #     th_r= -40/180*pi,
+        #     sf=1,
+        #     xd=[0, 0],
+        #     x_start=0,
+        #     x_end=0,
+        #     w=0
+        # )
+        ob3 = Ellipse(
             a= [1,1],
             p= [1,1],
             x0= [14,-2],
@@ -94,7 +120,7 @@ def main(simulationNumber=0, saveFigures=False):
             x_end=0,
             w=0
         )
-        obs.append(ob3)
+        # obs.append(ob3)
 
         x_range = [ -1,20]
         y_range = [-10,10]
@@ -103,8 +129,21 @@ def main(simulationNumber=0, saveFigures=False):
 
         attractorPos = [0,0]
 
-        animationName = 'animation_movingCircle.mp4'
-        run_animation(x_init, obs, x_range=x_range, y_range=y_range, dt=0.05, N_simuMax=1040, convergenceMargin=0.3, sleepPeriod=0.01,attractorPos=attractorPos, animationName=animationName, saveFigure=saveFigures )
+        animationName = './ani/animation_movingCircle'
+        # anim = run_animation(x_init, obs, x_range=x_range, y_range=y_range, dt=0.05, N_simuMax=1040, convergenceMargin=0.3, sleepPeriod=0.01,attractorPos=attractorPos, animationName=animationName, saveFigure=False, return_animationObject=True )
+        run_animation(x_init, obs, x_range=x_range, y_range=y_range, dt=0.05, N_simuMax=1040, convergenceMargin=0.3, sleepPeriod=0.01,attractorPos=attractorPos, animationName=animationName, saveFigure=True)
+
+        print('Before saving animation.')
+
+        # if True: #save animation
+        #     anim.ani.save(animationName, dpi=100, fps=25)
+        #     print('Saving finished.')
+
+        # dist slow = 0.18
+        # anim.ani.save('ani/simue.mpeg', writer="ffmpeg")
+        # FFwriter = animation.FFMpegWriter()
+        # anim.ani.save('ani/basic_animation.mp4', writer = FFwriter, fps=20)
+
 
 
     if simulationNumber == 1:
@@ -113,7 +152,14 @@ def main(simulationNumber=0, saveFigures=False):
 
         th_r0 = 38/180*pi
         obs = []
-        obs.append(Obstacle(
+        # obs.append(Obstacle(
+        #     a = [4,0.4],
+        #     p = [1,1],
+        #     x0 = [0, 2],
+        #     th_r = 30/180*pi,
+        #     sf = 1.0))
+
+        obs.append(Ellipse(
             a = [4,0.4],
             p = [1,1],
             x0 = [0, 2],
@@ -138,8 +184,8 @@ def main(simulationNumber=0, saveFigures=False):
 
         x_init = samplePointsAtBorder(N, x_range, y_range)
 
-        animationName = 'test.mp4'
-        run_animation(x_init, obs, x_range=x_range, y_range=y_range, dt=0.02, N_simuMax=1000, convergenceMargin=0.3, sleepPeriod=0.001, RK4_int=True, animationName=animationName, saveFigure=False)
+        animationName = 'test'
+        run_animation(x_init, obs, x_range=x_range, y_range=y_range, dt=0.02, N_simuMax=1000, convergenceMargin=0.3, sleepPeriod=0.001, RK4_int=True, animationName=animationName, saveFigure=saveFigures)
 
 
     elif simulationNumber ==2:

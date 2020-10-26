@@ -23,6 +23,7 @@ from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle_container import *
 
 import json # store/load data
 
+# With these paths we need to call it from inside the scripts folder
 # data_set_path = "/home/lukas/Code/ObstacleAvoidance/icub_SCA/SVM_training_toy_example/libsvm_data/datasets_train/"
 data_set_path = "../data/"
 use_test_data = False
@@ -66,6 +67,7 @@ def create_normal_vector_field(Obstacles, resolution=20, x_range=[0, 1], y_range
 
     col_lists = ['red', 'blue']
 
+    # Is this for the "normal" obstacle definition?
     if False:
     # for oo in range(len(Obstacles)):
         normal_vecs = Obstacles[oo].get_normal_direction(position=np.c_[XX.ravel, YY.ravel].T)
@@ -90,7 +92,7 @@ def create_normal_vector_field(Obstacles, resolution=20, x_range=[0, 1], y_range
         Obstacles[oo].draw_obstacle(show_contour=False, fig=fig, ax=ax)
         ax.quiver(XX, YY, normal_vecs[0, :], normal_vecs[1, :], color='red')
         ax.quiver(XX, YY, ref_dirs[0, :], ref_dirs[1, :], color='blue')
-
+        plt.savefig('../figures/example_svmlearnedGamma_normalVectorField_{}.png'.format(oo))
         
 def create_modulated_vector_field(Obstacles, pos_attractor=None, resolution=80, x_range=[0, 1], y_range=[0, 1], plot_type_quiver=True, max_vel=0.1):
     YY, XX = np.mgrid[y_range[0]:y_range[1]:resolution*1j, x_range[0]:x_range[1]:resolution*1j]
@@ -150,6 +152,7 @@ def create_modulated_vector_field(Obstacles, pos_attractor=None, resolution=80, 
         plt.axis('equal')       # 
 
     plt.legend()
+    plt.savefig('../figures/example_svmlearnedGamma_modulatedDS.png')
     # for oo, cols in  zip(range(len(Obstacles)), col_lists):
         
         # normal_vecs = Obstacles[oo].get_normal_direction(position=np.vstack((XX, YY)))
@@ -175,7 +178,7 @@ for oo in range(len(Obstacles)):
     Obstacles[oo].draw_obstacle(show_contour=True)
     Obstacles[oo].draw_obstacle(show_contour=True, gamma_value=True)
 
-# create_normal_vector_field(Obstacles)
+create_normal_vector_field(Obstacles)
 
 attractor = np.array([0.8, 0.2])
 # create_modulated_vector_field(Obstacles, attractor, resolution=30, plot_type_quiver=True)

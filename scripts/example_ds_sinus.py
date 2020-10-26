@@ -77,5 +77,6 @@ plt.figure()
 plt.quiver(XX, YY, vel[:, :, 0], vel[:, :, 1])
 plt.plot(attractor_pos[0], attractor_pos[1], 'k*', markeredgewidth=4, markersize=13)
 plt.plot(0, 0, 'k.', markeredgewidth=4, markersize=13)
+plt.savefig('../fig/example_DS_sinus.png')
 
 print("The code finished correctly.")

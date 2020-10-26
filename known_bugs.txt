@@ -1,0 +1,23 @@
+Some notes/comments about bugs in the testing scripts:
+Author: Nadia Figueroa (@nbfigueroa)
+
+examples_vector_field.py:
+ - Obstacle class seems to be depricated, does not allow for definition as done in this scripts, by replacing it with the Ellipse class, some of the examples work.
+ - Not all of the examples run, first the Cuboid class is not in this repo, so those examples fail. Most of the other examples that fail are those that have multiple obstacles for which functions coming from obs_common_section.py and obs_dynamic_center_3d.py fail (specifically line 78 of obs_dynamic_center_3d.py) 
+
+examples_boundary_field.py:
+- works for the options that use only Ellipse-type obstacles, cuboid class missing.. as above.
+
+examples_sensory_data.py: missing json file with lidar data.
+
+examples_animation.py:
+- None of the examples run due to same issues as above. Once changed, the examples that are valid do run, yet creating the animation fails.. dunno if this is my PC, I tried on 2 ubuntu distros (16 and 18) and both fail, it could be my graphics card, but not entirely sure. 
+
+example_DS_sinus.py: works
+
+test_vectorfield.py: fails due to object intersection search function described above.
+
+test_learning_obstacle_gradient.py: works!
+
+test_animation.py: something fails with matplotlib
+

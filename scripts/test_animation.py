@@ -19,6 +19,7 @@ from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import Obstacle
 from dynamic_obstacle_avoidance.visualization.vector_field_visualization import Simulation_vectorFields
 from dynamic_obstacle_avoidance.visualization.animated_simulation import *
 from dynamic_obstacle_avoidance.visualization.widget_function_vectorfield import *
+from dynamic_obstacle_avoidance.obstacle_avoidance.ellipse_obstacles import *
 
 x_range, y_range = [-16, 16], [-2, 18]
 x_init = samplePointsAtBorder(number_of_points=10, x_range=x_range, y_range=y_range)
@@ -33,13 +34,13 @@ p=[1,1]
 th_r=0/180*pi
 vel = [0, 0]
 
-obs.append(Obstacle(a=a, p=p, x0=x0, th_r=th_r, sf=1))
-
+# obs.append(Obstacle(a=a, p=p, x0=x0, th_r=th_r, sf=1))
+obs.append(Ellipse(a=a, p=p, x0=x0, th_r=th_r, sf=1))
 
 # %matplotlib notebook
 ani = run_animation(x_init, obs=obs, x_range=x_range, y_range=y_range, 
               dt=0.005, N_simuMax=1000, convergenceMargin=0.3, sleepPeriod=0.001, 
-              RK4_int=True, hide_ticks=False, return_animationObject=True)
+              RK4_int=False, hide_ticks=False, return_animationObject=True)
 plt.ion()
 ani.show()
 

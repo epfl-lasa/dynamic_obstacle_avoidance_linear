@@ -15,11 +15,13 @@ import matplotlib.pyplot as plt
 from dynamic_obstacle_avoidance.dynamical_system.dynamical_system_representation import *
 from dynamic_obstacle_avoidance.visualization.vector_field_visualization import *  #
 from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
+from dynamic_obstacle_avoidance.obstacle_avoidance.ellipse_obstacles import *
+
 
 ########################################################################
 # Chose the option you want to run as a number in the option list (integer from -2 to 10)
 # options = [0, 1, 2]
-options = [0]
+options = [2]
 
 N_resol = 100
 

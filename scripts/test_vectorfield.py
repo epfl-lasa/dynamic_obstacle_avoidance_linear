@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 # Custom libraries
 from dynamic_obstacle_avoidance.dynamical_system.dynamical_system_representation import *
 from dynamic_obstacle_avoidance.visualization.vector_field_visualization import *  #
-from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
+# from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle import *
+from dynamic_obstacle_avoidance.obstacle_avoidance.ellipse_obstacles import *
 
 ########################################################################
 # Chose the option you want to run as a number in the option list (integer from -2 to 10)
@@ -40,7 +41,8 @@ x0=[5.5, -0.8]
 th_r=40/180*pi
 sf=1
 vel = [0, 0]
-obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=vel))
+# obs.append(Obstacle(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=vel))
+obs.append(Ellipse(a=a, p=p, x0=x0,th_r=th_r, sf=sf, xd=vel))
 
 obs[0].set_reference_point([0.3, 3], in_global_frame=False)
 
