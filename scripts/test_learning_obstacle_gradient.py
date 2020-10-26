@@ -68,31 +68,32 @@ def create_normal_vector_field(Obstacles, resolution=20, x_range=[0, 1], y_range
     col_lists = ['red', 'blue']
 
     # Is this for the "normal" obstacle definition?
-    if False:
-    # for oo in range(len(Obstacles)):
-        normal_vecs = Obstacles[oo].get_normal_direction(position=np.c_[XX.ravel, YY.ravel].T)
-        ref_dirs = Obstacles[oo].get_reference_direction(position=np.c_[XX.ravel, YY.ravel].T, in_global_frame=True)
-        fig, ax = plt.subplots()
-        Obstacles[oo].draw_obstacle(show_contour=False, fig=fig, ax=ax)
-        ax.quiver(XX, YY, normal_vecs[0, :], normal_vecs[1, :], color=col_lists[0])
-        plt.axis('equal')
+    if True:
+        # for oo in range(len(Obstacles)):
+            # normal_vecs = Obstacles[oo].get_normal_direction(position=np.c_[XX.ravel, YY.ravel].T)
+            # ref_dirs = Obstacles[oo].get_reference_direction(position=np.c_[XX.ravel, YY.ravel].T, in_global_frame=True)
+            # fig, ax = plt.subplots()
+            # Obstacles[oo].draw_obstacle(show_contour=False, fig=fig, ax=ax)
+            # ax.quiver(XX, YY, normal_vecs[0, :], normal_vecs[1, :], color=col_lists[0])
+            # plt.axis('equal')
+            # print('DOING THISSS')
 
-    res_x = res_y = resolution
-    normal_vecs = np.zeros((Obstacles[0].dim, res_x, res_y))
-    ref_dirs = np.zeros((Obstacles[0].dim, res_x, res_y))
-    for oo in range(len(Obstacles)):
-        for ix in range(res_x):
-            for iy in range(res_y):
-                pos = np.array([XX[ix,iy],YY[ix,iy]])
-                E, E_orth = compute_decomposition_matrix(x_t=pos, obs=Obstacles[oo], in_global_frame=True)
-                normal_vecs[:, ix, iy] = E_orth[:, 0]
-                ref_dirs[:, ix, iy] = E[:, 0]
-                
-        fig, ax = plt.subplots()
-        Obstacles[oo].draw_obstacle(show_contour=False, fig=fig, ax=ax)
-        ax.quiver(XX, YY, normal_vecs[0, :], normal_vecs[1, :], color='red')
-        ax.quiver(XX, YY, ref_dirs[0, :], ref_dirs[1, :], color='blue')
-        plt.savefig('../figures/example_svmlearnedGamma_normalVectorField_{}.png'.format(oo))
+        res_x = res_y = resolution
+        normal_vecs = np.zeros((Obstacles[0].dim, res_x, res_y))
+        ref_dirs = np.zeros((Obstacles[0].dim, res_x, res_y))
+        for oo in range(len(Obstacles)):
+            for ix in range(res_x):
+                for iy in range(res_y):
+                    pos = np.array([XX[ix,iy],YY[ix,iy]])
+                    E, E_orth = compute_decomposition_matrix(x_t=pos, obs=Obstacles[oo], in_global_frame=True)
+                    normal_vecs[:, ix, iy] = E_orth[:, 0]
+                    ref_dirs[:, ix, iy] = E[:, 0]
+                    
+            fig, ax = plt.subplots()
+            Obstacles[oo].draw_obstacle(show_contour=True, gamma_value=False, fig=fig, ax=ax)
+            ax.quiver(XX, YY, normal_vecs[0, :], normal_vecs[1, :], color='red')
+            ax.quiver(XX, YY, ref_dirs[0, :], ref_dirs[1, :], color='blue')
+            plt.savefig('../figures/example_svmlearnedGamma_normalVectorField_{}.png'.format(oo))
         
 def create_modulated_vector_field(Obstacles, pos_attractor=None, resolution=80, x_range=[0, 1], y_range=[0, 1], plot_type_quiver=True, max_vel=0.1):
     YY, XX = np.mgrid[y_range[0]:y_range[1]:resolution*1j, x_range[0]:x_range[1]:resolution*1j]

@@ -254,8 +254,9 @@ class Animated():
         
         # Numerical hull of ellipsoid
         for n in range(len(self.obs)):
-            self.obs[n].draw_ellipsoid(numPoints=50) # 50 points resolution
-
+            # self.obs[n].draw_ellipsoid(numPoints=50) # 50 points resolution
+            self.obs[n].draw_obstacle(numPoints=50) # 50 points resolution
+            
         for n in range(len(self.obs)):
             if self.dim==2:
                 emptyList = [[0,0] for i in range(50)]
@@ -403,8 +404,8 @@ def run_animation(*args, animationName="test", saveFigure=False,
     # Somehow the class initialization <<Animated(**)>>
     # and anim.show() has to be in the same file/function
     plt.close('all')
-    # plt.ion()
-    plt.ioff()
+    plt.ion()
+    # plt.ioff()
 
     anim = Animated(*args, **kwargs) # Initialize
 

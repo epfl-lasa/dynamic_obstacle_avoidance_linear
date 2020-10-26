@@ -75,6 +75,10 @@ def dynamic_center_3d(obs, intersection_obs, marg_dynCenter=1.3, N_distStep=3, r
             ref_dist = dist_contact*marg_dynCenter
             
             # Inside consideration region -- are obstacles close to each other
+            # HERE IS WHERE THINGS FAIL!!!
+            # print(x_obs_sf[it2])
+            tmp = np.tile(obs[it1].x0,(x_obs_sf[it2].shape[1],1)).T
+            # print(tmp)
             ind = np.sum( (x_obs_sf[it2]-np.tile(obs[it1].x0,(x_obs_sf[it2].shape[1],1)).T )**2, axis=0) < ref_dist**2
 
             if not sum(ind):

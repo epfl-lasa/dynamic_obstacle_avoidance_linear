@@ -120,6 +120,7 @@ def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPo
         xd_obs_n = exp_weight*(np.array(obs[n].xd) + xd_w)
         
         xd_obs = xd_obs + xd_obs_n*weight[n]
+        
     xd = xd-xd_obs #computing the relative velocity with respect to the obstacle
 
     xd_hat = np.zeros((dim, N_obs))
@@ -146,6 +147,7 @@ def obs_avoidance_interpolation_moving(x, xd, obs=[], attractor='none', weightPo
             # xd_hat[:,n] = M[:,:,n].dot(xd) # velocity modulation
             # import pdb; pdb.set_trace() ## DEBUG ##
             
+        # repulsive_obstacle = False    
         if repulsive_obstacle:
             # Move away from center in case of a collision
             if Gamma[n] < (1+repulsive_gammaMargin): 

@@ -84,6 +84,7 @@ class Ellipse(Obstacle):
         self.ind_edge_tang = 1
 
         self.margin_absolut = margin_absolut # why again???
+        self.always_moving = False
         
     @property
     def a(self): # TODO: remove
@@ -480,6 +481,9 @@ class Ellipse(Obstacle):
         # intersection = self.get_intersection_with_surface(reference_point, position-reference_point, only_positive_direction=True)
         intersection = self.get_intersection_with_surface(reference_point, position-reference_point, only_positive_direction=True)
         
+        print(intersection)
+        print(reference_point)
+        
         try:
             return np.linalg.norm(intersection-reference_point)
         except:
@@ -778,8 +782,10 @@ class Ellipse(Obstacle):
         mag_ref_point = np.linalg.norm(self.reference_point)
         
         if mag_ref_point:
-            reference_point_temp = self.reference_point*(1 + dist_max/mag_ref_point)
-
+            print(self.reference_point)
+            print(1 + dist_max/mag_ref_point)
+            reference_point_temp_np = np.array(self.reference_point)*(1 + dist_max/mag_ref_point)
+            reference_point_temp = reference_point_temp_np.tolist()
         if (mag_ref_point and self.get_gamma(reference_point_temp)>1):
             
             # if self.margin_absolut:

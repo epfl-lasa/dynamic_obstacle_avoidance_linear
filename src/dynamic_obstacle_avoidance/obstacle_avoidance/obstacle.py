@@ -150,6 +150,7 @@ class Obstacle(State):
 
         Obstacle.id_counter += 1 # New obstacle created
         Obstacle.active_counter += 1
+        self._center_dyn  = []
 
     def __del__(self):
         Obstacle.active_counter -= 1
@@ -160,6 +161,11 @@ class Obstacle(State):
     @property
     def center_dyn(self):# TODO: depreciated -- delete
         return self.reference_point
+    @center_dyn.setter
+    def center_dyn(self, value):
+        # Rename kernel-point?
+        self._center_dyn = value
+        self.reference_point = self._center_dyn      
     
     @property
     def global_reference_point(self):
@@ -309,8 +315,9 @@ class Obstacle(State):
     # def boundary_points
     
     # def position_array_wrapper(self, func, position, *args, **kwargs):
-    def get_gamma(self, position, *args, **kwargs):
+    def get_gamma(self, position_, *args, **kwargs):
         ''' Get gamma value of obstacle '''
+        position = np.array(position_)
         if len(position.shape)==1:
             position = np.reshape(position, (self.dim, 1))
             # import pdb; pdb.set_trace() ## DEBUG ##
@@ -487,7 +494,8 @@ class Obstacle(State):
         if in_global_frame:
             position = self.transform_global2relative(position)
             
-        self.reference_point = position
+        # self.reference_point = position
+        self.reference_point = np.array(position)
         self.extend_hull_around_reference()
         
     def move_obstacle_to_referencePoint(self, position, in_global_frame=True):

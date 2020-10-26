@@ -80,7 +80,7 @@ class LearningObstacle(Obstacle):
         predict_score = predict_score.reshape(xx.shape)
         # import pdb; pdb.set_trace() ## DEBUG ##
         
-        levels = np.array([0])
+        levels = np.array([0, 1])
         
         cs0 = ax.contour(xx, yy, predict_score, levels, origin='lower', colors='k', linewidths=2)
         if show_contour:
