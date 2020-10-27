@@ -66,18 +66,20 @@ def create_normal_vector_field(Obstacles, resolution=20, x_range=[0, 1], y_range
     # YY = YY.flatten()
 
     col_lists = ['red', 'blue']
-
+    positions = np.c_[XX.ravel(), YY.ravel()].T
     # Is this for the "normal" obstacle definition?
-    if True:
-        # for oo in range(len(Obstacles)):
-            # normal_vecs = Obstacles[oo].get_normal_direction(position=np.c_[XX.ravel, YY.ravel].T)
-            # ref_dirs = Obstacles[oo].get_reference_direction(position=np.c_[XX.ravel, YY.ravel].T, in_global_frame=True)
-            # fig, ax = plt.subplots()
-            # Obstacles[oo].draw_obstacle(show_contour=False, fig=fig, ax=ax)
-            # ax.quiver(XX, YY, normal_vecs[0, :], normal_vecs[1, :], color=col_lists[0])
-            # plt.axis('equal')
-            # print('DOING THISSS')
-
+    if False:
+        for oo in range(len(Obstacles)):
+            normal_vecs = Obstacles[oo].get_normal_direction(position=positions)
+            ref_dirs = Obstacles[oo].get_reference_direction(position=positions, in_global_frame=True)
+            fig, ax = plt.subplots()
+            Obstacles[oo].draw_obstacle(show_contour=False, fig=fig, ax=ax)
+            ax.quiver(XX, YY, normal_vecs[0, :], normal_vecs[1, :], color=col_lists[0])
+            ax.quiver(XX, YY, ref_dirs[0, :], ref_dirs[1, :], color=col_lists[1])
+            plt.axis('equal')
+            print('DOING THISSS')
+            plt.savefig('../figures/example_svmlearnedGamma_normalVectorField_{}.png'.format(oo))
+    else:
         res_x = res_y = resolution
         normal_vecs = np.zeros((Obstacles[0].dim, res_x, res_y))
         ref_dirs = np.zeros((Obstacles[0].dim, res_x, res_y))
@@ -93,7 +95,7 @@ def create_normal_vector_field(Obstacles, resolution=20, x_range=[0, 1], y_range
             Obstacles[oo].draw_obstacle(show_contour=True, gamma_value=False, fig=fig, ax=ax)
             ax.quiver(XX, YY, normal_vecs[0, :], normal_vecs[1, :], color='red')
             ax.quiver(XX, YY, ref_dirs[0, :], ref_dirs[1, :], color='blue')
-            plt.savefig('../figures/example_svmlearnedGamma_normalVectorField_{}.png'.format(oo))
+            plt.savefig('../figures/example_svmlearnedGamma_normalVectorField_{}_adapted.png'.format(oo))
         
 def create_modulated_vector_field(Obstacles, pos_attractor=None, resolution=80, x_range=[0, 1], y_range=[0, 1], plot_type_quiver=True, max_vel=0.1):
     YY, XX = np.mgrid[y_range[0]:y_range[1]:resolution*1j, x_range[0]:x_range[1]:resolution*1j]
@@ -140,7 +142,7 @@ def create_modulated_vector_field(Obstacles, pos_attractor=None, resolution=80, 
         ax = plt.subplot(1, 2, 1)
         for oo in range(len(Obstacles)):
             Obstacles[oo].draw_obstacle(show_contour=False, fig=fig, ax=ax)
-        str1 = plt.streamplot(XX, YY, ds_initial[0, :, :], ds_initial[1, :, :], color='#A22828')
+        str1 = plt.streamplot(XX, YY, ds_initial[0, :, :], ds_initial[1, :, :], density = 3.5, linewidth=0.55,  color='#A22828')
         plt.title("Initial DS")
         plt.axis('equal')
 
@@ -148,7 +150,7 @@ def create_modulated_vector_field(Obstacles, pos_attractor=None, resolution=80, 
         for oo in range(len(Obstacles)):
             Obstacles[oo].draw_obstacle(show_contour=False, fig=fig, ax=ax)
 
-        str2 = plt.streamplot(XX, YY, ds_modulated[0, :, :], ds_modulated[1, :, :], color='#0C537C')
+        str2 = plt.streamplot(XX, YY, ds_modulated[0, :, :], ds_modulated[1, :, :], density = 3.5, linewidth=0.55, color='#0C537C')
         plt.title("Modulated DS")
         plt.axis('equal')       # 
 
@@ -183,6 +185,6 @@ create_normal_vector_field(Obstacles)
 
 attractor = np.array([0.8, 0.2])
 # create_modulated_vector_field(Obstacles, attractor, resolution=30, plot_type_quiver=True)
-create_modulated_vector_field(Obstacles, attractor, resolution=80, plot_type_quiver=False)
+create_modulated_vector_field(Obstacles, attractor, resolution=100, plot_type_quiver=False)
 
 # read_obstacle_from_file(file_in_path, file_in_name)
