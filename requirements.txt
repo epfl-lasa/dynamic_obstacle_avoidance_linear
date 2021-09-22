@@ -5,6 +5,7 @@ numpy
 matplotlib
 scipy
 PyYAML
+shapely
 
 # Jupyter Notebook
 jupyter

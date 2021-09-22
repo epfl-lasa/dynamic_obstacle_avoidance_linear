@@ -6,11 +6,18 @@ Requirements: conda, jupyter notebook, python.
 
 To setup got to your install/code directory, and type:
 ```
-git clone https://github.com/epfl-lasa/dynamic_obstacle_avoidance_linear
+git clone --recurse-submodules https://github.com/epfl-lasa/dynamic_obstacle_avoidance_linear
 conda env create -f environment.yml
 conda activate obstacle_avoidance_linear
 pip install -r requirements.txt
 python setup.py develop
+```
+
+If you don't have various_tools library install, add it with:
+``` sh
+cd lib//various_tools
+python setup.py develop
+cd ../..
 ```
 
 ### Interactive jupyter notebook module
