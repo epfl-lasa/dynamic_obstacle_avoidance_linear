@@ -1,5 +1,4 @@
 #!/USSR/bin/python3
-
 """
 @date 2019-10-15
 @author Lukas Huber 
@@ -47,22 +46,36 @@ class LearningObstacle(Obstacle):
 
         self._cassifier_obstacle = None
 
-        self._max_dist = 0
+        self._max_dist = None
+        
+        self._outer_dist_fac = 2 # Descent of added gamma
     
-    def learn_obstacles_from_data(self, data_obs, data_free, gamma_svm=20, C_svm=20.0):
+    def learn_obstacles_from_data(self, data_obs, data_free, gamma_svm=10, C_svm=20.0, only_close_points=True):
+        # TODO: make gmmma dependent on obstacle 'size' or outer_dist_fac to ensure continuous decent.
+        dist = np.linalg.norm(data_obs-np.tile(self.global_reference_point, (data_obs.shape[1], 1)).T, axis=0)
+        self._max_dist = np.max(dist)
+
+        self._outer_ref_dist = self._max_dist*self._outer_dist_fac
+
+        if only_close_points: # For faster calculation
+            free_dist = np.linalg.norm(data_free-np.tile(self.global_reference_point, (data_free.shape[1], 1)).T, axis=0)
+            ind_close = free_dist < self._outer_ref_dist
+            data_free = data_free[:, ind_close]
+
+        # self.gamma_svm = gamma_svm
+        self.gamma_svm = (self._outer_dist_fac-self._max_dist) * 2
+        print('gamma svm', self.gamma_svm)
+
         data = np.hstack((data_free, data_obs))
         label = np.hstack(( np.zeros(data_free.shape[1]), np.ones(data_obs.shape[1]) ))
-        self._classifier = svm.SVC(kernel='rbf', gamma=gamma_svm, C=C_svm).fit(data.T, label)
-        self.gamma_svm = gamma_svm
+        self._classifier = svm.SVC(kernel='rbf', gamma=self.gamma_svm, C=C_svm).fit(data.T, label)
 
         print('Number of support vectors / data points')
         print('Free space: ({} / {}) --- Obstacle ({} / {})'.format(
             self._classifier.n_support_[0], data_free.shape[1],
             self._classifier.n_support_[1], data_obs.shape[1]))
         
-        dist = np.linalg.norm(data_obs-np.tile(self.global_reference_point, (data_obs.shape[1], 1)).T, axis=0)
-        self._max_dist = np.max(dist)
-
+        
     def draw_obstacle(self, fig=None, ax=None, show_contour=True, gamma_value=False):
         xx, yy = np.meshgrid(np.arange(0, 1, 0.01), np.arange(0, 1, 0.01))
 
@@ -80,7 +93,7 @@ class LearningObstacle(Obstacle):
         predict_score = predict_score.reshape(xx.shape)
         # import pdb; pdb.set_trace() ## DEBUG ##
         
-        levels = np.array([0, 1])
+        levels = np.array([0])
         
         cs0 = ax.contour(xx, yy, predict_score, levels, origin='lower', colors='k', linewidths=2)
         if show_contour:
@@ -119,19 +132,20 @@ class LearningObstacle(Obstacle):
 
         pos_shape = position.shape
         position = position.reshape(self.dim, -1)
-        
-        score = self._classifier.decision_function(np.c_[position[0, :].T, position[1, :].T])
-        
+
         dist = np.linalg.norm(position - np.tile(self.global_reference_point, (position.shape[1], 1)).T, axis=0)
+        ind_noninf = self._outer_ref_dist > dist
 
-        outer_ref_dist = self._max_dist*2.0
-        dist = np.clip(dist, self._max_dist, outer_ref_dist)
+        score = np.zeros(position.shape[1])
 
-        ind_noninf = outer_ref_dist > dist
-        distance_score = (outer_ref_dist-self._max_dist)/(outer_ref_dist-dist[ind_noninf])
+        if np.sum(ind_noninf): # At least one element
+            score[ind_noninf] = self._classifier.decision_function(np.c_[position[0, ind_noninf], position[1, ind_noninf]])
+        
+        dist = np.clip(dist, self._max_dist, self._outer_ref_dist)
+        distance_score = (self._outer_ref_dist-self._max_dist)/(self._outer_ref_dist-dist[ind_noninf])        
 
         max_float = sys.float_info.max
-        max_float = 1e12
+        max_float = 1e12 
         gamma = np.zeros(dist.shape)
         gamma[ind_noninf] = (-score[ind_noninf] + 1) * distance_score
         gamma[~ind_noninf] = max_float

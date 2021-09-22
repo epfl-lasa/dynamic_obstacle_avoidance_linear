@@ -1,188 +1,49 @@
-#!/USSR/bin/python3
-'''
-@date 2019-10-15
-@author Lukas Huber 
-@mail lukas.huber@epfl.ch
-'''
+# Author Lukas Huber 
+# Mail lukas.huber@epfl.ch
+# Created 2021-06-22
+# License: BSD (c) 2021
 
 import time
 import numpy as np
 import copy
-# from math import sin, cos, pi, ceil
 from math import pi
 import warnings, sys
 
-import numpy.linalg as LA
 import matplotlib.pyplot as plt
 
-from dynamic_obstacle_avoidance.obstacle_avoidance.angle_math import *
+from vartools.angle_math import *
 
-from dynamic_obstacle_avoidance.obstacle_avoidance.state import *
-from dynamic_obstacle_avoidance.obstacle_avoidance.modulation import *
-from dynamic_obstacle_avoidance.obstacle_avoidance.obs_common_section import *
-from dynamic_obstacle_avoidance.obstacle_avoidance.obs_dynamic_center_3d import *
+from dynamic_obstacle_avoidance.utils  import *
+from dynamic_obstacle_avoidance.avoidance.obs_common_section import Intersection_matrix
+from dynamic_obstacle_avoidance.avoidance.obs_common_section import *
+from dynamic_obstacle_avoidance.avoidance.obs_dynamic_center_3d import *
 
-from dynamic_obstacle_avoidance.obstacle_avoidance.obstacle_learning import LearningObstacle
-
-from dynamic_obstacle_avoidance.obstacle_avoidance.obs_common_section import Intersection_matrix
-
-visualize_debug = False
-
-from sklearn.cluster import DBSCAN # Only used for learning (Clustering)
-
-class BaseContainer():
-    def __init__(self, obs_list=None):
-        self.index_wall = None
-        
-        if isinstance(obs_list, list):
-            self._obstacle_list = obs_list
-            for ii in range(len(self._obstacle_list)):
-                if self._obstacle_list[ii].is_boundary:
-                    if not self.index_wall is None:
-                        warnings.warn("Several boundary obstacles in one container.")
-                    self.index_wall = ii
-        else:
-            self._obstacle_list = []
-        # pass
-
-    def __getitem__(self, key):
-        ''' List-like or dictionarry-like access to obstacle'''
-        if isinstance(key, (str)):
-            for ii in range(len(self._obstacle_list)):
-                if self._obstacle_list[ii].name == key:
-                    return self._obstacle_list[ii]
-            raise ValueError("Obstacle <<{}>> not in list.".format(key))
-        else:
-            return self._obstacle_list[key]
-
-    def __setitem__(self, key, value):
-        # Is this useful?
-        self._obstacle_list[key] = value
-    
-    def __delitem__(self, key):
-        '''Obstacle is not part of the workspace anymore.'''
-        
-        del(self._obstacle_list[key])
-
-        if not self.index_wall is None:
-            if self.index_wall>key:
-                self.index_wall -= 1
-            elif self.index_wall==key:
-                self.index_wall = None
-
-    def __len__(self):
-        return len(self._obstacle_list)
-
-    def append(self, value): # Compatibility with normal list.
-        self._obstacle_list.append(value)
-        if value.is_boundary:
-            if not self.index_wall is None:
-                warnings.warn("Two wall obstacles in container.")
-            self.index_wall = len(self._obstacle_list)-1
-
-    @property
-    def dimension(self):
-        # Dimension of all obstacles is expected to be equal
-        return self._obstacle_list[0].dim
-
-    @property
-    def dim(self):
-        # Dimension of all obstacles is expected to be equal
-        return self._obstacle_list[0].dim
-    
-    @property
-    def list(self):
-        return self._obstacle_list
-
-
-class LearningContainer(BaseContainer):
-    def __init__(self, obs_list=None):
-        # self.a = 0
-        if sys.version_info>(3,0):
-            super().__init__(obs_list)
-        else:
-            super(BaseContainer, self).__init__(obs_list) # works for python < 3.0?!
-
-        # self.temp = 0
-            
-    def create_obstacles_from_data(self, data, label, cluster_eps=0.1, cluster_min_samles=10, label_free=0, label_obstacle=1, plot_raw_data=False):
-        # TODO: numpy import instead?
-        
-        data_obs = data[:, label==label_obstacle]
-        data_free = data[:, label==label_free]
-        
-        
-        if plot_raw_data:
-            # 2D
-            plt.figure(figsize=(6, 6))
-            plt.plot(data_free[0, :], data_free[1, :], '.', color='#57B5E5', label='No Collision')
-            plt.plot(data_obs[0, :], data_obs[1, :], '.', color='#833939', label='Collision')
-            plt.axis('equal')
-            plt.title("Raw Data")
-            plt.legend()
-
-            plt.xlim([np.min(data[0, :]), np.max(data[0, :])])
-            plt.ylim([np.min(data[1, :]), np.max(data[1, :])])
-
-        # TODO: try OPTICS?  & compare
-        clusters = DBSCAN(eps=cluster_eps, min_samples=cluster_min_samles).fit(data_obs.T)
-
-        cluster_labels, obs_index = np.unique(clusters.labels_, return_index=True)
-        # TODO: can obs_index be used?
-
-        n_obstacles = np.sum(cluster_labels>=0)
-        
-        obs_points = [] #
-        
-        for oo in range(n_obstacles):
-            ind_clusters = (clusters.labels_==oo)
-            obs_points.append(data_obs[:, ind_clusters])
-
-            mean_position = np.mean(obs_points[-1], axis=1)
-            # TODO: make sure mean_position is within obstacle...
-            
-            self._obstacle_list.append(LearningObstacle(center_position=mean_position))
-
-            
-            data_non_obs_temp = np.hstack((data_obs[:, ~ind_clusters], data_free))
-            self._obstacle_list[oo].learn_obstacles_from_data(data_obs=obs_points[oo], data_free=data_non_obs_temp)
-
-    def load_obstacles_from_file(self, file_name):
-        pass
-
+from dynamic_obstacle_avoidance.containers import BaseContainer
 
 class ObstacleContainer(BaseContainer):
-# class ObstacleContainer(list): # ?? inherit from list?
+    # class ObstacleContainer(list): # ?? inherit from list?
     # List like obstacle container
     # Contains properties of the obstacle environment. Which require centralized handling
     
     # TODO: Update this in a smart way
     # TODO: how much information/treatement in the obstacle class, how much in container?
-    
     def __init__(self, obs_list=None):
-        self.index_wall = None
-        
-        if isinstance(obs_list, list):
-            self._obstacle_list = obs_list
-            for ii in range(len(self._obstacle_list)):
-                if self._obstacle_list[ii].is_boundary:
-                    if not self.index_wall is None:
-                        warnings.warn("Several boundary obstacles in one container.")
-                    self.index_wall = ii
-        else:
-            self._obstacle_list = []
-            
+        if sys.version_info>(3,0):
+            super().__init__(obs_list)
+        else: # Python 2
+            super(ObstacleContainer, self).__init__(obs_list) # works for python < 3.0?!
+
         self._family_label = None
         self._unique_families = None
         self._rotation_direction = None
 
         if len(self) == 0:
             # self._intersection_matrix = None
-            self._dynamic_reference_points = None
+            self._boundary_reference_points = None
             self._distance_matrix = None
         else:
             # self._intersection_matrix = Intersection_matrix(n_obs=, dim=self[0].dim)
-            self._dynamic_reference_points = np.zeros((2, n_obs, n_obs))
+            self._boundary_reference_points = np.zeros((2, len(self), len(self)))
             self._distance_matrix = DistanceMatrix(n_obs=self.number)
 
         # The reset clusters has to be called after all obstacles are inserted in order to update the container
@@ -197,21 +58,9 @@ class ObstacleContainer(BaseContainer):
         # self._outside_influence_region = np.ones(self._unique_families.shape, dtype=bool)
         self._outside_influence_region = np.ones(self._family_label.shape, dtype=bool)
 
-    def __repr__(self):
-        return "ObstacleContainer of length #{}".format(len(self))
-
-    def __str__(self):
-        return "ObstacleContainer of length #{}".format(len(self))
-        
-    def __len__(self):
-        return len(self._obstacle_list)
-
-    @property
-    def number(self):
-        return len(self._obstacle_list)
 
     def __getitem__(self, key):
-        ''' List-like or dictionarry-like access to obstacle'''
+        """ List-like or dictionarry-like access to obstacle"""
         if isinstance(key, (str)):
             for ii in range(len(self._obstacle_list)):
                 if self._obstacle_list[ii].name == key:
@@ -229,50 +78,35 @@ class ObstacleContainer(BaseContainer):
                 continue
             self._distance_matrix[jj, key] = None
 
-    def __delitem__(self, key):
-        '''Obstacle is not part of the workspace anymore.'''
+    # def __delitem__(self, key):
+        """Obstacle is not part of the workspace anymore."""
         
-        del(self._obstacle_list[key])
-        if self.index_wall>key:
-            self.index_wall -= 1
-        elif self.index_wall==key:
-            self.index_wall = None
+        # del(self._obstacle_list[key])
+        # if self.index_wall>key:
+            # self.index_wall -= 1
+        # elif self.index_wall==key:
+            # self.index_wall = None
 
-        warnings.warn("Intersection Matrix is not updated properly.")
-        self._distance_matrix = Intersection_matrix(len(self._obstacle_list), self[0].dim)
+        # warnings.warn("Intersection Matrix is not updated properly.")
+        # self._distance_matrix = Intersection_matrix(len(self._obstacle_list), self[0].dim)
 
-    @property
-    def dimension(self):
-        # Dimension of all obstacles is expected to be equal
-        return self._obstacle_list[0].dim
-
-    @property
-    def dim(self):
-        # Dimension of all obstacles is expected to be equal
-        return self._obstacle_list[0].dim
-    
-    @property
-    def list(self):
-        return self._obstacle_list
 
         
-    def add_obstacle(self, value):
-        self.append(value)
-
+    # def append(self, value): # Compatibility with normal list.
         
-    def append(self, value): # Compatibility with normal list.
-        self._obstacle_list.append(value)
-        if value.is_boundary:
-            if not self.index_wall is None:
-                warnings.warn("Two wall obstacles in container.")
-            self.index_wall = len(self._obstacle_list)-1
-
-        self._distance_matrix = Intersection_matrix()
+        # self._obstacle_list.append(value)
         
-        distance_matrix_old = self._intersection_matrix
-        for ii in range(self.number-1):
-            for jj in range(ii):
-                self._distance_matrix[ii, jj] = distance_matrix_old[ii, jj]
+        # if value.is_boundary:
+            # if not self.index_wall is None:
+                # warnings.warn("Two wall obstacles in container.")
+            # self.index_wall = len(self._obstacle_list)-1
+
+        # self._distance_matrix = Intersection_matrix(len(self))
+        
+        # distance_matrix_old = self._distance_matrix
+        # for ii in range(self.number-1):
+            # for jj in range(ii):
+                # self._distance_matrix[ii, jj] = distance_matrix_old[ii, jj]
 
     def reset_intersections(self, index=None):
         if index is None:
@@ -309,7 +143,10 @@ class ObstacleContainer(BaseContainer):
 
     def get_sibling_groups(self):
         intersecting_obs, self.intersection_matrix = obs_common_section_hirarchy(self, update_reference_point=False, get_intersection_matrix=True)
+        self.assign_sibling_groups(intersecting_obs)
 
+    def assign_sibling_groups(self, intersecting_obs):
+        """ Assign each obstacle to a group label & calculate corresponding label"""
         if True:
             self._family_label = np.ones(len(self))*(-1)
 
@@ -332,8 +169,6 @@ class ObstacleContainer(BaseContainer):
         center_list = np.array([self[jj].center_position for jj in range(len(self))]).T
         for ii in range(self._family_centers.shape[1]):
             self._family_centers[:, ii] = np.mean(center_list[:, (self._family_label==ii)], axis=1)
-
-
 
     def get_family_index(self, index):
         # Assumption: _unique_families is sorted
@@ -495,12 +330,8 @@ class ObstacleContainer(BaseContainer):
                 
                 if ind_end in fill_list[ii]:
                     it_list.append(np.array(fill_list[ii] == ind_end)[0])
-                # while (ii<len(fill_list[-1])):
-                    # if temp_list[ii]==ind_end:
-                    # it_list[-1] = ii
                     return it_list
-                    # path_not_found = False
-                    # break
+
                 
                 # Check for Duplicates
                 jj = 0
@@ -510,34 +341,6 @@ class ObstacleContainer(BaseContainer):
                         continue
                     jj += 1
                 flat_list.append(fill_list[-1])
-
-
-            # # Increment
-            # increment_level = len(it_list)
-            # while(increment_level>0):
-            #     it_list[increment_level] += 1
-                
-            #     eval_list = siblings_list
-            #     for ii in range(len(it_list)-1):
-            #         eval_list = eval_list[it_list]
-
-            #         if len(eval_list)==0:
-            #             it_list[increment_level] = 0
-            #             increment_level -= 1
-            #             break
-
-            #         if (ii==increment_level and
-            #             it_list[increment_level] > len(eval_list)):
-            #             it_list[increment_level] = 0
-            #             increment_level -= 1
-            #             break
-
-            # siblings_list.append(copy.deepcopy(siblings_list))
-            
-            # if it_list[-1]>=len(eval_list):
-                # it_list[0]
-            
-            # break
     
     def get_siblings(self, ind):
         # TODO: use intersection matrix instead / maybe not
@@ -545,5 +348,3 @@ class ObstacleContainer(BaseContainer):
             return np.array([self[ind].parent] + self.ind_children)
         else:
             return np.array(self.ind_children)
-        
-        

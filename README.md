@@ -9,7 +9,8 @@ To setup got to your install/code directory, and type:
 git clone https://github.com/epfl-lasa/dynamic_obstacle_avoidance_linear
 conda env create -f environment.yml
 conda activate obstacle_avoidance_linear
-python setup.py install
+pip install -r requirements.txt
+python setup.py develop
 ```
 
 ### Interactive jupyter notebook module

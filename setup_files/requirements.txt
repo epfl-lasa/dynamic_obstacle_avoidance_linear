@@ -1,4 +1,0 @@
-####### requirements-pip.txt #######
-###### Requirements without Version Specifiers ######
-numpy
-matplotlib

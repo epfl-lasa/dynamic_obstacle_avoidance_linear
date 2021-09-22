@@ -29,67 +29,31 @@ from dynamic_obstacle_avoidance.obstacle_avoidance.obs_common_section import *
 from dynamic_obstacle_avoidance.obstacle_avoidance.obs_dynamic_center_3d import *
 from dynamic_obstacle_avoidance.obstacle_avoidance.linear_modulations import *
 
-from dynamic_obstacle_avoidance.obstacle_avoidance.dynamic_boundaries_polygon import DynamicBoundariesPolygon
-
 plt.rcParams['animation.ffmpeg_path'] = '/usr/bin/ffmpeg'
 
-def samplePointsAtBorder(number_of_points, x_range, y_range, obs=[]):
-    # Draw points evenly spaced at border
-    dx = x_range[1]-x_range[0]
-    dy = y_range[1]-y_range[0]
-
-    N_x = int(np.ceil(dx/(2*(dx+dy))*(number_of_points))+2)
-    N_y = int(np.ceil(dx/(2*(dx+dy))*(number_of_points))-0)
-
-    x_init = np.vstack((np.linspace(x_range[0],x_range[1], num=N_x), np.ones(N_x)*y_range[0]))
-
-    x_init = np.hstack((x_init, 
-                        np.vstack((np.linspace(x_range[0],x_range[1], num=N_x),
-                                   np.ones(N_x)*y_range[1] )) ))
-
-    ySpacing=(y_range[1]-y_range[0])/(N_y+1)
-    x_init = np.hstack((x_init, 
-                        np.vstack((np.ones(N_y)*x_range[0],
-                                   np.linspace(y_range[0]+ySpacing,y_range[1]-ySpacing, num=N_y) )) ))
-
-    x_init = np.hstack((x_init, 
-                        np.vstack((np.ones(N_y)*x_range[1],
-                                   np.linspace(y_range[0]+ySpacing,y_range[1]-ySpacing, num=N_y) )) ))
-    
-    if len(obs):
-        collisions = obs_check_collision(x_init, obs)
-        x_init = x_init[:,collisions[0]]
-        
-    return x_init
-
-
 ##### Anmation Function #####
-class Animated():
+class AnimatedSurgery():
     """
     An animated scatter plot using matplotlib.animations.FuncAnimation.
     """
-    def __init__(self, x0=None, obs=[], N_simuMax=600, dt=0.01, attractorPos=None, convergenceMargin=0.01, x_range=[-10,10], y_range=[-10,10], zRange=[-10,10], sleepPeriod=0.03, RK4_int= False, dynamicalSystem=linearAttractor, hide_ticks=True, figSize=(8,7), dimension=None):
+    def __init__(self, x0=None, obs=[], N_simuMax=600, dt=0.01, attractorPos='default', convergenceMargin=0.01, x_range=[-10,10], y_range=[-10,10], zRange=[-10,10], sleepPeriod=0.03, RK4_int= False, dynamicalSystem=linearAttractor, hide_ticks=True, figSize=(8,5), dimensions=2):
 
-        if x0 is None:
-            self.dim = 2 # Default
+        if isinstance(x0, type(None)):
+            self.dim = dimensions
             self.infitineLoop = True
         else:
             self.infitineLoop = False
             self.dim = x0.shape[0]
         self.print_count = False
 
-        if not dimension is None:
-            self.dim = dimension
-
         # Initialize class variables
         self.obs = obs
         self.N_simuMax = N_simuMax
         self.dt = dt
-        
-        if attractorPos is None:
-            self.attractorPos = np.zeros(self.dim)
+        if attractorPos == 'default':
+            self.attractorPos = self.dim*[0.0]
         else:
-            self.attractorPos = np.array(attractorPos)
+            self.attractorPos = attractorPos
             
         self.sleepPeriod=sleepPeriod
 
@@ -101,7 +65,7 @@ class Animated():
 
         # Get current simulation time
         self.old_time = time.time()
-
+        
         self.N_points = x0.shape[1]
 
         self.x_pos = np.zeros((self.dim, self.N_simuMax+2, self.N_points))
@@ -229,12 +193,9 @@ class Animated():
             if isinstance(self.obs[o], DynamicBoundariesPolygon):
                 it_point = 0
                 self.obs[o].update_pos(self.t[self.iSim], self.dt, z_value=self.x_pos[1, self.iSim+1, it_point]) # Update obstacles
-                # self.obs[o].update_pos(self.t[self.iSim], self.dt, self.ax.get_xlim(), self.ax.get_ylim()) # Update obstacles
             else:
                 self.obs[o].update_pos(self.t[self.iSim], self.dt, self.ax.get_xlim(), self.ax.get_ylim()) # Update obstacles
-            
-            # self.obs[o].update_pos(self.t[self.iSim], self.dt, self.ax.get_xlim(), self.ax.get_ylim()) # Update obstacles
-            
+                                   
 
             self.centers[o].set_xdata(self.obs[o].center_position[0])
             self.centers[o].set_ydata(self.obs[o].center_position[1])
@@ -249,16 +210,17 @@ class Animated():
 
             if self.obs[o].always_moving or self.obs[o].x_end > self.t[self.iSim] or self.iSim<1: # First two rounds or moving
                 if self.dim ==2: # only show safety-contour in 2d, otherwise not easily understandable
-                    # self.contour[o].set_xdata([self.obs[o].x_obs_sf[ii][0] for ii in range(len(self.obs[o].x_obs_sf[:, :2]))])
-                    self.contour[o].set_xdata(self.obs[o].x_obs_sf[0, :])
-                    self.contour[o].set_ydata(self.obs[o].x_obs_sf[1, :])
+                    self.contour[o].set_xdata([self.obs[o].x_obs_sf[ii][0] for ii in range(len(self.obs[o].x_obs_sf))])
+                    self.contour[o].set_ydata([self.obs[o].x_obs_sf[ii][1] for ii in range(len(self.obs[o].x_obs_sf))])
 
             if self.obs[o].always_moving or self.obs[o].x_end > self.t[self.iSim] or self.iSim<2:
                 if self.dim==2:
-                    self.obs_polygon[o].xy = self.obs[o].x_obs[:2, :].T
+                    print(self.obs[o].x_obs.shape)
+                    import pdb; pdb.set_trace() ## DEBUG ##
+                    self.obs_polygon[o].xy = self.obs[o].x_obs
+                    
                 else:
-                    self.obs_polygon[o].xyz = self.obs[o].x_obs[:3, :].T
-
+                    self.obs_polygon[o].xyz = self.obs[o].x_obs
         self.iSim += 1 # update simulation counter
 
         # Convergence is not discovered during video-saving
@@ -273,18 +235,12 @@ class Animated():
     
 
     def setup_plot(self):
-        print("Start setup...")
         # Draw obstacle
         self.obs_polygon = []
         
         # Numerical hull of ellipsoid
         for n in range(len(self.obs)):
-            
-            if isinstance(self.obs[n], DynamicBoundariesPolygon):
-                it_point=0
-                self.obs[n].draw_obstacle(z_val=self.x_pos[1, self.iSim+1, it_point]) # Update obstacles)
-            else:
-                self.obs[n].draw_obstacle(numPoints=50) # 50 points resolution
+            self.obs[n].draw_obstacle(numPoints=50) # 50 points resolution
 
         for n in range(len(self.obs)):
             if self.dim==2:
@@ -300,7 +256,7 @@ class Animated():
                     boundary_polygon.set_color(np.array([176,124,124])/255.)
                     plt.gca().add_patch(boundary_polygon) # No track of this one
 
-                    self.obs_polygon.append( plt.Polygon(self.obs[n].x_obs[:, :2], alpha=1.0, zorder=-1))
+                    self.obs_polygon.append( plt.Polygon(self.obs[n].x_obs, alpha=1.0, zorder=-1))
                     self.obs_polygon[n].set_color(np.array([1.0,1.0,1.0]))
                 else:
                     self.obs_polygon.append( plt.Polygon(emptyList, animated=True,))
@@ -391,11 +347,8 @@ class Animated():
                     self.attractorPos[0] = np.random.rand(1)[0]*(self.ax.get_xlim()[1]-self.ax.get_xlim()[0])+self.ax.get_xlim()[0]
                     self.attractorPos[1] = np.random.rand(1)[0]*(self.ax.get_ylim()[1]-self.ax.get_ylim()[0])+self.ax.get_ylim()[0]
 
-                    new_attractor_is_chosen = True
-                    for oo in range(len(self.obs)):
-                        if self.obs[oo].get_gamma(self.attractorPos) < 1:
-                            new_attractor_is_chosen = False
-                            break
+                    no_collisions = obs_check_collision(np.tile(self.attractorPos, (1,1)).T, self.obs)
+                    new_attractor_is_chosen = no_collisions[0]
 
                 self.attr_pos[0].set_data(self.attractorPos[0], self.attractorPos[1])
 
@@ -445,18 +398,16 @@ class Animated():
                 
 
                 
-def run_animation(*args, animationName="test", saveFigure=False,
+def run_animation_surgery(*args, animationName="test", saveFigure=False,
                   return_animationObject=False, **kwargs):
     # This function is called from other scripts
     # Somehow the class initialization <<Animated(**)>>
     # and anim.show() has to be in the same file/function
-    print("Run it...")
-    
     plt.close('all')
     # plt.ion()
     plt.ioff()
 
-    anim = Animated(*args, **kwargs) # Initialize
+    anim = AnimatedSurgery(*args, **kwargs) # Initialize
 
     # animation cannot run properly when getting saved at the same time to file.
     # i.e. choose one or the other for each run

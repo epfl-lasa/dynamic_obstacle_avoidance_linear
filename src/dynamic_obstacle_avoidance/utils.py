@@ -1,146 +1,121 @@
-'''
-Obstacle Avoidance Library with different options
+"""
+Varios tools and uitls for advanced obstacle-avoidance-library
+"""
+# Author Lukas Huber
+# Date 2018-02-15
 
-@author Lukas Huber
-@date 2018-02-15
+import warnings
 
-'''
 import numpy as np
 import numpy.linalg as LA
 from numpy import pi
 
-from math import cos, sin
+from vartools.angle_math import *
+from vartools.linalg import get_orthogonal_basis
 
-import warnings
+# from dynamic_obstacle_avoidance.dynamical_system.dynamical_system_representation import *
 
-from dynamic_obstacle_avoidance.dynamical_system.dynamical_system_representation import *
-from dynamic_obstacle_avoidance.obstacle_avoidance.angle_math import *
+def get_relative_obstacle_velocity(
+    position:  np.ndarray, obstacle_list, E_orth: np.ndarray, weights: list,
+    ind_obstacles: int = None, gamma_list: list = None, cut_off_gamma: float = 1e-6):
+    """ Get the relative obstacle velocity
 
-import matplotlib.pyplot as plt
-
-
-
-def compute_diagonal_matrix(Gamma, dim, is_boundary=False, rho=1):
-    ''' Compute diagonal Matrix'''
-
-    # def calculate_eigenvalues(Gamma, rho=1, is_boundary=False): // Old function name
+    Parameters
+    ----------
+    E_orth: array which contains orthogonal matrix with repsect to the normal direction at <position>
+            array of (dimension, dimensions, n_obstacles
+    obstacle_list: list or <obstacle-conainter> with obstacles
+    ind_obstacles: Inidicates which obstaces will be considered (array-like of int)
+    gamma_list: Precalculated gamma-values (list of float) -
+                It is adviced to use 'proportional' gamma values, rather than relative ones
     
-    if Gamma<=1: # point inside the obstacle
-        delta_eigenvalue = 1 
-    else:
-        delta_eigenvalue = 1./abs(Gamma)**(1/rho)
-
-    eigenvalue_reference = 1 - delta_eigenvalue
-    # eigenvalue_reference = 0.1
+    Return
+    ------
+    relative_velocity: array-like of float
+    """
+    n_obstacles = len(obstacle_list)
     
-    if is_boundary:
-        # eigenvalue_tangent = 1
-        eigenvalue_tangent = 1 + delta_eigenvalue            
-    else:
-        eigenvalue_tangent = 1 + delta_eigenvalue            
-
-    # return eigenvalue_reference, eigenvalue_tangent
-    # eigenvalue_reference, eigenvalue_tangent = calculate_eigenvalues(Gamma, is_boundary=is_boundary)
-    return np.diag(np.hstack((eigenvalue_reference, np.ones(dim-1)*eigenvalue_tangent)))
-
-
-def compute_decomposition_matrix(obs, x_t, in_global_frame=False, dot_margin=0.05):
-    ''' Compute decomposition matrix and orthogonal matrix to basis'''
-    normal_vector = obs.get_normal_direction(x_t, normalize=True, in_global_frame=in_global_frame)
-    reference_direction = obs.get_reference_direction(x_t, in_global_frame=in_global_frame)
-
-    # TODO: remove
-    # margin_vec = 1e-6
-    # if np.abs(np.linalg.norm(normal_vector)-1)>margin_vec :
-        # warnings.warn('normal vector not normalized...')
-    # if np.abs(np.linalg.norm(reference_direction)-1)>margin_vec:
-        # warnings.warn('reference vector not normalized...')
-    # end remove
-
-    dot_prod = np.dot(normal_vector, reference_direction)
+    if gamma_list is None:
+        gamma_list = np.zeros(n_obstacles)
+        for n in range(n_obstacles):
+            Gamma[n] = obs[n].get_gamma(position, in_global_frame=True)
     
-    if np.abs(dot_prod) < dot_margin:
-        # Adapt reference direction to avoid singularities
-        # WARNING: full convergence is not given anymore, but impenetrability
-        if not np.linalg.norm(normal_vector): # zero
-            normal_vector = -reference_direction
+    if ind_obstacles is None:
+        ind_obstacles = gamma_list < cut_off_gamma
+        Gamma = Gamma[ind_obstacles]
+        
+    obs = obstacle_list
+    ind_obs = ind_obstacles
+    dim = position.shape[0]
+    
+    xd_obs = np.zeros((dim))
+
+    for ii, it_obs in zip(range(np.sum(ind_obs)), np.arange(n_obstacles)[ind_obs]):
+        # xd_w = obs[it_obs].get_velocity_from_rotation(position)
+        if dim==2:
+            xd_w = np.cross(np.hstack(([0, 0], obs[it_obs].angular_velocity)),
+                            np.hstack((position-np.array(obs[it_obs].center_position), 0)))
+            xd_w = xd_w[0:2]
+        elif dim==3:
+            xd_w = np.cross(obs[it_obs].angular_velocity, position-obs[it_obs].center_position)
         else:
-            weight = np.abs(dot_prod)/dot_margin
-            dir_norm = np.copysign(1,dot_prod)
-            reference_direction = get_directional_weighted_sum(reference_direction=normal_vector,
-                directions=np.vstack((reference_direction, dir_norm*normal_vector)).T,
-                weights=np.array([weight, (1-weight)]))
-    
-    E_orth = get_orthogonal_basis(normal_vector, normalize=True)
-    E = np.copy((E_orth))
-    E[:, 0] = -reference_direction
-    
-    return E, E_orth
+            xd_w = np.zeros(dim)
+            warnings.warn('Angular velocity is not defined for={}'.format(d))
 
-
-def compute_modulation_matrix(x_t, obs, matrix_singularity_margin=pi/2.0*1.05, angular_vel_weight=0):
-    # TODO: depreciated remove
-    '''
-     The function evaluates the gamma function and all necessary components needed to construct the modulation function, to ensure safe avoidance of the obstacles.
-    Beware that this function is constructed for ellipsoid only, but the algorithm is applicable to star shapes.
-    
-    Input
-    x_t [dim]: The position of the robot in the obstacle reference frame
-    obs [obstacle class]: Description of the obstacle with parameters
+        weight_angular = np.exp(-1.0/obs[it_obs].sigma*(np.max([gamma_list[ii], 1])-1))
         
-    Output
-    E [dim x dim]: Basis matrix with rows the reference and tangent to the obstacles surface
-    D [dim x dim]: Eigenvalue matrix which is responsible for the modulation
-    Gamma [dim]: Distance function to the obstacle surface (in direction of the reference vector)
-    E_orth [dim x dim]: Orthogonal basis matrix with rows the normal and tangent
-    '''
-
-    dim = obs.dim
-    
-    if hasattr(obs, 'rho'):
-        rho = np.array(obs.rho)
-    else:
-        rho = 1
-
-    Gamma = obs.get_gamma(x_t, in_global_frame=False) # function for ellipsoids
-    
-
-    # Check if there was correct placement of reference point
-    # Gamma_referencePoint = obs.get_gamma(obs.reference_point, in_global_frame=False)
-
-    # if not obs.is_boundary and Gamma_referencePoint >= 1:
-        # Check what this does and COMMENT!!!!
-        # import pdb; pdb.set_trace() ## DEBUG ##
-        # Per default negative
-        # referenceNormal_angle = np.arccos(reference_direction.T.dot(normal_vector))
+        linear_velocity = obs[it_obs].linear_velocity
+        velocity_only_in_positive_normal_direction = True
         
-        # surface_position = obs.get_obstace_radius* x_t/LA.norm(x_t)
-        # direction_surface2reference = obs.get_reference_point()-surface_position
+        if velocity_only_in_positive_normal_direction:
+            lin_vel_local = E_orth[:, :, ii].T.dot(obs[it_obs].linear_velocity)
+            if lin_vel_local[0]<0 and not obs[it_obs].is_boundary:
+                # Obstacle is moving towards the agent
+                linear_velocity = np.zeros(lin_vel_local.shape[0])
+            else:
+                linear_velocity = E_orth[:, 0, ii].dot(lin_vel_local[0])
+
+            weight_linear = np.exp(-1/obs[it_obs].sigma*(np.max([gamma_list[ii], 1])-1))
+            # linear_velocity = weight_linear*linear_velocity
+
+        xd_obs_n = weight_linear*linear_velocity + weight_angular*xd_w
         
-        # if referenceNormal_angle < (matrix_singularity_margin):
-            # x_global = obs.transform_relative2global(x_t)
-            # plt.quiver(x_global[0],x_global[1], normal_vector[0], normal_vector[1], 'r')
-            # plt.quiver(x_global[0],x_global[1], normal_vector[0], normal_vector[1], color='r')
-            # plt.quiver(x_global[0],x_global[1], reference_direction[0], reference_direction[1], color='b')
-            
-            # referenceNormal_angle = np.min([0, referenceNormal_angle-pi/2.0])
-    
-            # Gamma_convexHull = 1*referenceNormal_angle/(matrix_singularity_margin-pi/2.0)
-            # Gamma = np.max([Gamma, Gamma_convexHull])
-            
-            # reference_orthogonal = (normal_vector -
-                                    # reference_direction * reference_direction.T @ normal_vector)
-            # normal_vector = (reference_direction*np.sin(matrix_singularity_margin)
-                             # + reference_orthogonal*np.cos(matrix_singularity_margin))
+        # The Exponential term is very helpful as it help to avoid
+        # the crazy rotation of the robot due to the rotation of the object
+        if obs[it_obs].is_deforming:
+            weight_deform = np.exp(-1/obs[it_obs].sigma*(np.max([gamma_list[ii], 1])-1))
+            vel_deformation = obs[it_obs].get_deformation_velocity(pos_relative[:, ii])
 
-            # plt.quiver(x_global[0],x_global[1], normal_vector[0], normal_vector[1], color='g')
-            # plt.ion()
+            if velocity_only_in_positive_normal_direction:
+                vel_deformation_local = E_orth[:, :, ii].T.dot(vel_deformation)
+                if ((vel_deformation_local[0] > 0 and not obs[it_obs].is_boundary)
+                    or (vel_deformation_local[0] < 0 and obs[it_obs].is_boundary)):
+                    vel_deformation = np.zeros(vel_deformation.shape[0])
+                    
+                else:
+                    vel_deformation = E_orth[:, 0, ii].dot(vel_deformation_local[0])
+                    
+            xd_obs_n += weight_deform * vel_deformation
+        xd_obs = xd_obs + xd_obs_n*weights[ii]
 
-    E, E_orth = compute_decomposition_matrix(obs, x_t, dim)
-    D = compute_diagonal_matrix(Gamma, dim=dim, is_boundary=obs.is_boundary)
+    relative_velocity = xd_obs
+    return relative_velocity
 
-    return E, D, Gamma, E_orth
 
+def get_weight_from_gamma(*args, **kwargs):
+    raise Exception("Renamed to 'get_weight_from_inv_of_gamma'")
+
+def get_weight_from_inv_of_gamma(gamma_array: np.ndarray,
+                                 power_value: float = 1.0) -> np.ndarray:
+    """ Returns weight-array based on input of gamma_array. """
+    weight = 1.0/np.abs(gamma_array)**power_value
+    return weight
+
+def get_weight_gamma(gamma_array: np.ndarray, power_value: float = 1.0) -> np.ndarray:
+    """ Returns weight-array based on input of gamma_array. """
+    weight = np.abs(gamma_array)**power_value
+    weight = weight / np.sum(weight)
+    return weight
 
 
 def getGammmaValue_ellipsoid(ob, x_t, relativeDistance=True):
@@ -152,7 +127,6 @@ def getGammmaValue_ellipsoid(ob, x_t, relativeDistance=True):
     
 def get_radius_ellipsoid(x_t, a=[], ob=[]):
     # Derivation from  x^2/a^2 + y^2/b^2 = 1
-    
     if not np.array(a).shape[0]:
         a = ob.a
 
@@ -241,59 +215,6 @@ def get_radius(vec_point2ref, vec_cent2ref=[], a=[], obs=[]):
     
     return np.mean(rad_surf_cone)
 
-# def get_radius(vec_ref2point, vec_cent2ref=[], a=[], obs=[]):
-#     dim = 2 # TODO higher dimensions
-
-#     if not np.array(vec_cent2ref).shape[0]:
-#         vec_cent2ref = np.array(obs.center_dyn) - np.array(obs.x0)
-        
-#     if not np.array(a).shape[0]:
-#         a = obs.a
-        
-#     if not LA.norm(vec_cent2ref): # center = ref
-#         return get_radius_ellipsoid(vec_ref2point, a)
-    
-#     dir_surf_cone = np.zeros((dim, 2))
-#     rad_surf_cone = np.zeros((2))
-
-#     if np.cross(vec_ref2point, vec_cent2ref) > 0:
-#         dir_surf_cone[:, 0] = vec_cent2ref
-#         rad_surf_cone[0] = get_radius_ellipsoid(dir_surf_cone[:, 0], a)-LA.norm(vec_cent2ref)
-        
-#         dir_surf_cone[:, 1] = -1*np.array(vec_cent2ref)
-#         rad_surf_cone[1] = get_radius_ellipsoid(dir_surf_cone[:, 1], a)+LA.norm(vec_cent2ref)
- 
-#     else:
-#         dir_surf_cone[:, 0] = -1*np.array(vec_cent2ref)
-#         rad_surf_cone[0] = get_radius_ellipsoid(dir_surf_cone[:, 0], a)+LA.norm(vec_cent2ref)
-        
-#         dir_surf_cone[:, 1] = vec_cent2ref
-#         rad_surf_cone[1] = get_radius_ellipsoid(dir_surf_cone[:, 1], a)-LA.norm(vec_cent2ref)
-    
-#     ang_tot = pi/2
-#     for ii in range(12): # n_iter
-#         rotMat = np.array([[np.cos(ang_tot), np.sin(ang_tot)],
-#                            [-np.sin(ang_tot), np.cos(ang_tot)]])
-
-#         vec_ref2dir = rotMat.dot(dir_surf_cone[:, 0])
-        
-#         vec_ref2dir /= LA.norm(vec_ref2dir) # nonzero value expected
-        
-#         rad_ref2 = get_radius_ellipsoid(vec_ref2dir, a)
-#         vec_ref2surf = rad_ref2*vec_ref2dir - vec_cent2ref
-
-#         if np.cross(vec_ref2surf, vec_ref2point)==0: # how likely is this lucky guess? 
-#             return LA.norm(vec_ref2surf)
-#         elif np.cross(vec_ref2surf, vec_ref2point) < 0:
-#             dir_surf_cone[:, 0] = vec_ref2dir
-#             rad_surf_cone[0] = LA.norm(vec_ref2surf)
-#         else:
-#             dir_surf_cone[:, 1] = vec_ref2dir
-#             rad_surf_cone[1] = LA.norm(vec_ref2surf)
-
-#         ang_tot /= 2.0
-#     return np.mean(rad_surf_cone)
-
 
 def findRadius(ob, direction, a = [], repetition = 6, steps = 10):
     # NOT SURE IF USEFULL -- NORMALLY x = Gamma*Rad
@@ -349,8 +270,7 @@ def compute_eigenvalueMatrix(Gamma, rho=1, dim=2, radialContuinity=True):
 
 
 def compute_weights(distMeas, N=0, distMeas_lowerLimit=1, weightType='inverseGamma', weightPow=2):
-    # UNTITLED5 Summary of this function goes here
-    # Detailed explanation goes here
+    """ Compute weights based on a distance measure (with no upper limit)"""
     distMeas = np.array(distMeas)
     n_points = distMeas.shape[0]
     
@@ -378,6 +298,7 @@ def compute_weights(distMeas, N=0, distMeas_lowerLimit=1, weightType='inverseGam
 
 
 def compute_R(d, th_r):
+    warnings.warn("This function will be removed. Don't use it")
     if th_r == 0:
         rotMatrix = np.eye(d)
     # rotating the query point into the obstacle frame of reference
@@ -406,6 +327,8 @@ def compute_R(d, th_r):
 
 
 def obs_check_collision_2d(obs_list, XX, YY):
+    """ Check if points (as a list in *args) are colliding with any of the obstacles. 
+    Function is implemented for 2D only. """
     d = 2
 
     dim_points = XX.shape
@@ -424,14 +347,9 @@ def obs_check_collision_2d(obs_list, XX, YY):
 
     N_points = points.shape[1]
 
-    noColl = np.ones((1,N_points), dtype=bool)
+    noColl = np.ones((1, N_points), dtype=bool)
 
     for it_obs in range(len(obs_list)):
-        # on the surface, we have: \Gamma = \sum_{i=1}^d (xt_i/a_i)^(2p_i) == 1
-        R = compute_R(d,obs_list[it_obs].th_r)
-
-        # Gamma = np.sum( ( 1/obs_list[it_obs].sf * R.T @ (points - np.tile(np.array([obs_list[it_obs].x0]).T,(1,N_points) ) ) / np.tile(np.array([obs_list[it_obs].a]).T, (1, N_points)) )**(np.tile(2*np.array([obs_list[it_obs].p]).T, (1,N_points)) ), axis=0 )
-
         Gamma = np.zeros(N_points)
         for ii in range(N_points):
             Gamma[ii] = obs_list[it_obs].get_gamma(points[:,ii], in_global_frame=True)
@@ -442,9 +360,12 @@ def obs_check_collision_2d(obs_list, XX, YY):
 
 
 def obs_check_collision(obs_list, dim, *args):
+    """ Check if points (as a list in *args) are colliding with any of the obstacles. """
+
     # No obstacles
     if len(obs_list)==0:
         return np.ones(args[0].shape)
+    
     dim = obs_list[0].dim
 
     if len(*args)==dim:
@@ -460,10 +381,12 @@ def obs_check_collision(obs_list, dim, *args):
 
     for ii in range(N_points):
         pass
+    import pdb; pdb.set_trace()
     return noColl
 
 
 def obs_check_collision_ellipse(obs_list, dim, points):
+    warnings.warn("Depreciated --- delete this function ")
     # TODO: delete / depreciated
     for it_obs in range(len(obs_list)):
         # \Gamma = \sum_{i=1}^d (xt_i/a_i)^(2p_i) = 1
@@ -472,18 +395,17 @@ def obs_check_collision_ellipse(obs_list, dim, points):
         Gamma = sum( ( 1/obs_list[it_obs].sf * R.T.dot(points - np.tile(np.array([obs_list[it_obs].x0]).T,(1,N_points) ) ) / np.tile(np.array([obs_list[it_obs].a]).T, (1, N_points)) )**(np.tile(2*np.array([obs_list[it_obs].p]).T, (1, N_points)) ) )
 
         noColl = (noColl* Gamma>1)
-
     return noColl
 
 
 def get_tangents2ellipse(edge_point, axes, center_point=None, dim=2):
-    '''
+    """
     Get 2D tangent vector of ellipse with axes <<axes>> and center <<center_point>>
     with respect to a point <<edge_point>>
 
     Function returns the tangents and the points of contact
 
-     '''
+     """
     if not dim==2:
         # TODO cut ellipse along direction & apply 2D-problem
         raise TypeError("Not implemented for higher dimension")
@@ -498,6 +420,11 @@ def get_tangents2ellipse(edge_point, axes, center_point=None, dim=2):
     C_ = edge_point[1]**2 - axes[1]**2
     D_ = B_**2 - 4*A_*C_
 
+    if D_ < 0:
+        # print(edge_point)
+        # print(axes)
+        raise RuntimeError("Invalid value for D_<0 (D_={})".format(D_))
+    
     m = np.zeros(2)
 
     m[1] = (-B_ - np.sqrt(D_)) / (2*A_)
@@ -539,22 +466,60 @@ def get_tangents2ellipse(edge_point, axes, center_point=None, dim=2):
         
     return tangent_vectors, tangent_points
 
+def get_reference_weight(distance, obs_reference_size=None,
+                         distance_min=0, distance_max=3, weight_pow=1):
+    """ Get a weight inverse proportinal to the distance"""
+
+    # TODO: based on inverse prop weight calculation
+    # weights = get_inverse_proprtional_weight(distance, distance_min, distance_max, weight_pow)
+    weights_all = np.zeros(distance.shape)
+
+    # if False:
+    if any(np.logical_and(distance<=distance_min, distance>0)):
+        ind0 = (distance==0)
+        weights_all[ind0] = 1/np.sum(ind0)
+        return weights_all
+
+    # print('distance_max', distance_max)
+    ind_range = np.logical_and(distance>distance_min, distance<distance_max)
+    if not any(ind_range):
+        return weights_all
+
+    dist_temp = distance[ind_range]
+    weights = 1/(dist_temp-distance_min) - 1/(distance_max-distance_min)
+    weights = weights**weight_pow
+
+    # Normalize
+    weights = weights/np.sum(weights)
+
+    # Add amount of movement relative to distance
+    if not obs_reference_size is None:
+        distance_max = distance_max*obs_reference_size[ind_range]
+        
+    weight_ref_displacement = (1/(dist_temp+1-distance_min)
+                               - 1/(distance_max+1-distance_min))
+
+    weights_all[ind_range] = weights*weight_ref_displacement
     
-def cut_planeWithEllispoid(reference_position, axes, plane):
-    # TODO
-    raise NotImplementedError()
+    return weights_all
 
+def get_inverse_proprtional_weight(distance, distance_min=0, distance_max=3, weight_pow=1):
+    """ Get a weight inverse proportinal to the distance"""
+    weights = np.zeros(distance.shape)
 
-def cut_lineWithEllipse(line_points, axes):
-    # TODO
-    raise NotImplementedError()
+    if any(np.logical_and(distance<=distance_min, distance>0)):
+        ind0 = (distance==0)
+        weights[ind0] = 1/np.sum(ind0)
+        return weights
 
+    ind_range = np.logical_and(distance>distance_min, distance<distance_max)
+    if not any(ind_range):
+        return weights
 
-# from dynamic_obstacle_avoidance.obstacle_avoidance.ellipse_obstacle import Ellipse
-def get_intersectionWithEllipse(*args, **kwargs):
-    raise NotImplementedError("Module is integrated in Ellipse-Class.")
-    # return Ellipse.get_intersectionWith(*args, **kwargs)
-    
+    dist_temp = distance[ind_range]
+    weights[ind_range] = 1/(dist_temp-distance_min) - 1/(distance_max-distance_min)
+    weights[ind_range] = weights[ind_range]**weight_pow
 
-
-    
+    # Normalize
+    weights = weights/np.sum(weights)
+    return weights

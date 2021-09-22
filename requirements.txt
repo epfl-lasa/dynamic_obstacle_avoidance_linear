@@ -1,0 +1,14 @@
+# Requirement
+# python=3.9
+ipython
+numpy
+matplotlib
+scipy
+PyYAML
+
+# Jupyter Notebook
+jupyter
+jupyterlab
+notebook
+ipykernel
+jupyterlab
