@@ -2,6 +2,9 @@
 ---
 This package contains a dynamic obstacle avoidance algorithm for concave and convex obstacles as developped in [1]. The algorithm is an extension of the work of [2].
 ---
+This library is discontinued, use the following package instead:
+https://github.com/epfl-lasa/dynamic_obstacle_avoidance
+
 Requirements: conda, jupyter notebook, python.
 
 To setup got to your install/code directory, and type:
