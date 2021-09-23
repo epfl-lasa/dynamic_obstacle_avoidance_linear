@@ -16,7 +16,7 @@ python setup.py develop
 
 If you don't have various_tools library install, add it with:
 ``` sh
-cd lib//various_tools
+cd lib/various_tools
 python setup.py develop
 cd ../..
 ```
